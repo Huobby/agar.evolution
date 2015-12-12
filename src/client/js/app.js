@@ -140,6 +140,8 @@ var player = {
     screenHeight: screenHeight,
     target: {x: screenWidth / 2, y: screenHeight / 2}
 };
+//foods 是一个数组，储存周围可以吃的小球 ， fireFood是发射出去的小球 ，users附近的玩家，leaderboard是右上角的计分板
+//target当前玩家下一步运动的方向，
 
 var foods = [];
 var fireFood = [];
@@ -291,7 +293,13 @@ function keyInput(event) {
     }
 }
 
-/* Function called when a key is pressed, will change direction if arrow key */
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: directionDown
+ * Author: cxy
+ * Description: Function called when a key is pressed, will change direction if arrow key
+ * ===================================================================================== 
+ */ 
 function directionDown(event) {
 	var key = event.which || event.keyCode;
 
@@ -303,8 +311,13 @@ function directionDown(event) {
 		}
 	}
 }
-
-/* Function called when a key is lifted, will change direction if arrow key */
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: directionDown
+ * Author: cxy
+ * Description: Function called when a key is lifted, will change direction if arrow key
+ * ===================================================================================== 
+ */ 
 function directionUp(event) {
 	var key = event.which || event.keyCode;
 	if (directional(key)) {
@@ -315,8 +328,13 @@ function directionUp(event) {
 		}
 	}
 }
-
-/* Updates the direciton array including information about the new direction */
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: newDirection
+ * Author: cxy
+ * Description: Updates the direciton array including information about the new direction
+ * ===================================================================================== 
+ */ 
 function newDirection(direction, list, isAddition) {
 	var result = false;
 	var found = false;
@@ -340,7 +358,17 @@ function newDirection(direction, list, isAddition) {
 	return result;
 }
 
-/* Updates the target according to the directions in the directions array */
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: updateTarget
+ * Author: cxy
+ * Description: Updates the target according to the directions in the directions array
+ * ===================================================================================== 
+ */ 
+
+
+//target就是玩家控制的小球的位置，updateTarget 就是根据direction array里面储存的运动方向改变小球的位置
+
 function updateTarget(list) {
 	target = { x : 0, y: 0 };
 	var directionHorizontal = 0;
@@ -359,6 +387,14 @@ function updateTarget(list) {
 	target.y += directionVertical;
 }
 
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: updateTarget
+ * Author: cxy
+ * Description: Different directions
+ * ===================================================================================== 
+ */ 
+
 function directional(key) {
 	return horizontal(key) || vertical(key);
 }
@@ -376,6 +412,13 @@ function checkLatency() {
     socket.emit('ping');
 }
 
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: toggle ***
+ * Author: cxy
+ * Description: toggle different modes
+ * ===================================================================================== 
+ */ 
 function toggleDarkMode() {
     var LIGHT = '#f2fbff',
         DARK = '#181818';
@@ -423,7 +466,14 @@ function toggleContinuity(args) {
     }
 }
 
-// TODO
+
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: chat commands
+ * Author: cxy
+ * Description: ping,dark and so on, some commands that we can use in the chat box
+ * ===================================================================================== 
+ */ 
 // Break out many of these game controls into a separate class
 
 chat.registerCommand('ping', 'Check your latency', function () {
@@ -613,6 +663,14 @@ function drawCircle(centerX, centerY, radius, sides) {
     graph.fill();
 }
 
+
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: draw ***
+ * Author: cxy
+ * Description: draw food, firefood, players on the canvas
+ * ===================================================================================== 
+ */ 
 function drawFood(food) {
     graph.strokeStyle = 'hsl(' + food.hue + ', 100%, 45%)';
     graph.fillStyle = 'hsl(' + food.hue + ', 100%, 50%)';
@@ -722,7 +780,7 @@ function drawPlayers(order) {
         }
     }
 }
-
+//判断value在什么区间之内
 function valueInRange(min, max, value) {
     return Math.min(max, Math.max(min, value));
 }
