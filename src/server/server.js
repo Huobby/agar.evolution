@@ -113,7 +113,7 @@ function movePlayer(player) {
                     else if(distance < radiusTotal / 1.75) {
                         player.cells[i].mass += player.cells[j].mass;
                         player.cells[i].radius = util.massToRadius(player.cells[i].mass);
-                        player.cells = player.cells.splice(j, 1);
+                        player.cells.splice(j, 1);
                     }
                 }
             }
@@ -195,12 +195,17 @@ function balanceMass() {
         //console.log('mass rebalanced');
     }
 }
-
+/**
+ * 开启链接，初始化信息
+ */
 io.on('connection', function (socket) {
     console.log('A user connected!', socket.handshake.query.type);
 
+    // 用户类型 可以是player或者admin
     var type = socket.handshake.query.type;
+    // 根据defaultPlayerMass初始化半径
     var radius = util.massToRadius(c.defaultPlayerMass);
+    // 如果是farthest则根据已有用户生成最佳位置 否则就随机生成位置
     var position = c.newPlayerInitialPosition == 'farthest' ? util.uniformPosition(users, radius) : util.randomPosition(radius);
 
     var cells = [];
@@ -217,19 +222,27 @@ io.on('connection', function (socket) {
 
     var currentPlayer = {
         id: socket.id,
+        // x坐标
         x: position.x,
+        // y坐标
         y: position.y,
+        // 细胞个体，可以分裂
         cells: cells,
+        // 总质量
         massTotal: massTotal,
+        // 颜色
         hue: Math.round(Math.random() * 360),
         type: type,
+        // 心跳
         lastHeartbeat: new Date().getTime(),
+        // 要去的地方
         target: {
             x: 0,
             y: 0
         }
     };
 
+    // 客户端加入pkayer name等信息再返回
     socket.on('gotit', function (player) {
         console.log('Player ' + player.id + ' connecting');
 
@@ -243,31 +256,12 @@ io.on('connection', function (socket) {
             console.log('Player ' + player.id + ' connected!');
             sockets[player.id] = socket;
 
-            var radius = util.massToRadius(c.defaultPlayerMass);
-            var position = c.newPlayerInitialPosition == 'farthest' ? util.uniformPosition(users, radius) : util.randomPosition(radius);
-
-            player.x = position.x;
-            player.y = position.y;
-            player.target.x = 0;
-            player.target.y = 0;
-            if(type === 'player') {
-                player.cells = [{
-                    mass: c.defaultPlayerMass,
-                    x: position.x,
-                    y: position.y,
-                    radius: radius
-                }];
-                player.massTotal = c.defaultPlayerMass;
-            }
-            else {
-                 player.cells = [];
-                 player.massTotal = 0;
-            }
-            player.hue = Math.round(Math.random() * 360);
             currentPlayer = player;
             currentPlayer.lastHeartbeat = new Date().getTime();
+            // 将此用户加入用户列表
             users.push(currentPlayer);
 
+            // 告诉所有人有用户加入
             io.emit('playerJoin', { name: currentPlayer.name });
 
             socket.emit('gameSetup', {
@@ -279,15 +273,18 @@ io.on('connection', function (socket) {
 
     });
 
+    // 客户端发送ping测试连接时间
     socket.on('ping', function () {
         socket.emit('pong');
     });
 
+    // 客户端发送屏幕大小修改
     socket.on('windowResized', function (data) {
         currentPlayer.screenWidth = data.screenWidth;
         currentPlayer.screenHeight = data.screenHeight;
     });
 
+    // 客户端首次链接会发送此信息 服务器将生成的player信息发送回去
     socket.on('respawn', function () {
         if (util.findIndex(users, currentPlayer.id) > -1)
             users.splice(util.findIndex(users, currentPlayer.id), 1);
@@ -295,6 +292,7 @@ io.on('connection', function (socket) {
         console.log('User #' + currentPlayer.id + ' respawned');
     });
 
+    // 客户端断开连接
     socket.on('disconnect', function () {
         if (util.findIndex(users, currentPlayer.id) > -1)
             users.splice(util.findIndex(users, currentPlayer.id), 1);
@@ -303,6 +301,7 @@ io.on('connection', function (socket) {
         socket.broadcast.emit('playerDisconnect', { name: currentPlayer.name });
     });
 
+    // 客户端发送聊天信息
     socket.on('playerChat', function(data) {
         var _sender = data.sender.replace(/(<([^>]+)>)/ig, '');
         var _message = data.message.replace(/(<([^>]+)>)/ig, '');
@@ -312,6 +311,7 @@ io.on('connection', function (socket) {
         socket.broadcast.emit('serverSendPlayerChat', {sender: _sender, message: _message.substring(0,35)});
     });
 
+    // 客户端输入admin密码
     socket.on('pass', function(data) {
         if (data[0] === c.adminPass) {
             console.log(currentPlayer.name + ' just logged in as an admin');
@@ -325,6 +325,7 @@ io.on('connection', function (socket) {
         }
     });
 
+    // 客户端发送踢人请求
     socket.on('kick', function(data) {
         if (currentPlayer.admin) {
             var reason = '';
@@ -364,6 +365,7 @@ io.on('connection', function (socket) {
     });
 
     // Heartbeat function, update everytime
+    // 更新target
     socket.on('0', function(target) {
         currentPlayer.lastHeartbeat = new Date().getTime();
         if (target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
@@ -371,6 +373,7 @@ io.on('connection', function (socket) {
         }
     });
 
+    // 客户端按w后fireFood
     socket.on('1', function() {
         for(var i=0; i<currentPlayer.cells.length; i++)
         {
@@ -399,6 +402,8 @@ io.on('connection', function (socket) {
             }
         }
     });
+
+    // 客户端按空格后分裂
     socket.on('2', function() {
         //Split cells
         if(currentPlayer.cells.length < c.limitSplit && currentPlayer.massTotal >= c.defaultPlayerMass*2) {
@@ -557,7 +562,8 @@ function gameloop() {
             if(users[i].type == 'player') {
                 topUsers.push({
                     id: users[i].id,
-                    name: users[i].name
+                    name: users[i].name,
+                    mass: users[i].massTotal
                 });
             }
         }

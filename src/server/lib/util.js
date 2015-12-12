@@ -4,7 +4,7 @@
 
 var cfg = require('../../../config.json');
 
-exports.validNick = function(nickname) {
+exports.validNick = function (nickname) {
     var regex = /^\w*$/;
     return regex.exec(nickname) !== null;
 };
@@ -41,10 +41,22 @@ exports.randomPosition = function (radius) {
     };
 };
 
-exports.uniformPosition = function(points, radius) {
+/**
+ * 随机生成numberOfCandidates数量的坐标点
+ * 每生成一个与已有的坐标点points比较，生成一个最小距离
+ * 取最小距离最大的那个作为做好的坐标点位置
+ *
+ * @param points 已有的坐标点
+ * @param radius 要生成的圆的半径
+ * @returns {*} 最好的坐标点位置
+ */
+exports.uniformPosition = function (points, radius) {
+    // 最好的坐标点，最大的最小距离
     var bestCandidate, maxDistance = 0;
+    // 生成候选点数量
     var numberOfCandidates = 10;
 
+    // 如果没有points，就随机生成一个
     if (points.length === 0) {
         return exports.randomPosition(radius);
     }
@@ -55,6 +67,7 @@ exports.uniformPosition = function(points, radius) {
         var candidate = exports.randomPosition(radius);
         candidate.radius = radius;
 
+        // 算最小距离
         for (var pi = 0; pi < points.length; pi++) {
             var distance = exports.getDistance(candidate, points[pi]);
             if (distance < minDistance) {
@@ -62,6 +75,7 @@ exports.uniformPosition = function(points, radius) {
             }
         }
 
+        // 取最小距离中最大的
         if (minDistance > maxDistance) {
             bestCandidate = candidate;
             maxDistance = minDistance;
@@ -71,7 +85,7 @@ exports.uniformPosition = function(points, radius) {
     return bestCandidate;
 };
 
-exports.findIndex = function(arr, id) {
+exports.findIndex = function (arr, id) {
     var len = arr.length;
 
     while (len--) {
@@ -83,7 +97,7 @@ exports.findIndex = function(arr, id) {
     return -1;
 };
 
-exports.randomColor = function() {
+exports.randomColor = function () {
     var color = '#' + ('00000' + (Math.random() * (1 << 24) | 0).toString(16)).slice(-6);
     var c = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
     var r = (parseInt(c[1], 16) - 32) > 0 ? (parseInt(c[1], 16) - 32) : 0;
