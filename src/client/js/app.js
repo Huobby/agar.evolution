@@ -423,8 +423,12 @@ function toggleContinuity(args) {
     }
 }
 
-// TODO
-// Break out many of these game controls into a separate class
+/*  
+ * === FUNCTION ====================================================================== 
+ * Author : Wang Ziyuan
+ * Description: Break out many of these game controls into a separate class 
+ * ===================================================================================== 
+ */ 
 
 chat.registerCommand('ping', 'Check your latency', function () {
     checkLatency();
@@ -459,7 +463,13 @@ chat.registerCommand('kick', 'Kick a player', function (args) {
 });
 
 
-// socket stuff
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: setupSocket
+ * Author: Wang Ziyuan
+ * Description: Socket Stuff Handling
+ * ===================================================================================== 
+ */ 
 function setupSocket(socket) {
     // Handle ping
     socket.on('pong', function () {
@@ -594,6 +604,13 @@ function setupSocket(socket) {
     });
 }
 
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: drawCircle
+ * Author: Wang Ziyuan
+ * Description: Draw your circle according to center and radius
+ * ===================================================================================== 
+ */ 
 function drawCircle(centerX, centerY, radius, sides) {
     var theta = 0;
     var x = 0;
@@ -613,6 +630,13 @@ function drawCircle(centerX, centerY, radius, sides) {
     graph.fill();
 }
 
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: drawFood
+ * Author: Wang Ziyuan
+ * Description: Draw all food
+ * ===================================================================================== 
+ */
 function drawFood(food) {
     graph.strokeStyle = 'hsl(' + food.hue + ', 100%, 45%)';
     graph.fillStyle = 'hsl(' + food.hue + ', 100%, 50%)';
@@ -620,13 +644,26 @@ function drawFood(food) {
     drawCircle(food.x - player.x + screenWidth / 2, food.y - player.y + screenHeight / 2, food.radius, food.sides);
 }
 
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: drawCircle
+ * Author: Wang Ziyuan
+ * Description: Draw the food you fire
+ * ===================================================================================== 
+ */
 function drawFireFood(mass) {
     graph.strokeStyle = 'hsl(' + mass.hue + ', 100%, 45%)';
     graph.fillStyle = 'hsl(' + mass.hue + ', 100%, 50%)';
     graph.lineWidth = playerConfig.border+10;
     drawCircle(mass.x - player.x + screenWidth / 2, mass.y - player.y + screenHeight / 2, mass.radius-5, 18 + (~~(mass.masa/5)));
 }
-
+/*  
+ * === FUNCTION ====================================================================== 
+ * Name: drawCircle
+ * Author: Wang Ziyuan
+ * Description: Draw all  palyers
+ * ===================================================================================== 
+ */ 
 function drawPlayers(order) {
     var start = {
         x: player.x - (screenWidth / 2),
