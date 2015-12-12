@@ -28,6 +28,13 @@ if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) ) {
     mobile = true;
 }
 
+/*  
+* === FUNCTION ====================================================================== 
+* Name: startGame  
+* Author: Firebb
+* Description:  game entry
+* ===================================================================================== 
+*/ 
 function startGame(type) {
     playerName = playerNameInput.value.replace(/(<([^>]+)>)/ig, '').substring(0,25);
     playerType = type;
@@ -46,13 +53,26 @@ function startGame(type) {
     socket.emit('respawn');
 }
 
-// check if nick is valid alphanumeric characters (and underscores)
+/*  
+* === FUNCTION ====================================================================== 
+* Name: validNick 
+* Author: Firebb
+* Description: check if nick is valid alphanumeric characters (and underscores)
+* ===================================================================================== 
+*/ 
 function validNick() {
     var regex = /^\w*$/;
     debug('Regex Test', regex.exec(playerNameInput.value));
     return regex.exec(playerNameInput.value) !== null;
 }
 
+/*  
+* === FUNCTION ====================================================================== 
+* Name: window onload 
+* Author: Firebb
+* Description: add event to the welcome page button
+* ===================================================================================== 
+*/ 
 window.onload = function() {
 
     var btn = document.getElementById('startButton'),
@@ -77,6 +97,7 @@ window.onload = function() {
     var settings = document.getElementById('settings');
     var instructions = document.getElementById('instructions');
 
+    // show the setting Menu
     settingsMenu.onclick = function () {
         if (settings.style.maxHeight == '300px') {
             settings.style.maxHeight = '0px';
@@ -85,6 +106,7 @@ window.onload = function() {
         }
     };
 
+    // input player name
     playerNameInput.addEventListener('keypress', function (e) {
         var key = e.which || e.keyCode;
 
@@ -99,8 +121,8 @@ window.onload = function() {
     });
 };
 
-// Canvas
-var screenWidth = window.innerWidth;
+// Canvas parameters
+var screenWidth = window.innerWidth;		    // relate to client view
 var screenHeight = window.innerHeight;
 var gameWidth = 0;
 var gameHeight = 0;
@@ -120,10 +142,12 @@ var toggleMassState = 0;
 var backgroundColor = '#f2fbff';
 var lineColor = '#000000';
 
+// 
 var foodConfig = {
-    border: 0,
+    border: 0,          
 };
 
+//
 var playerConfig = {
     border: 6,
     textColor: '#FFFFFF',
@@ -132,9 +156,10 @@ var playerConfig = {
     defaultSize: 30
 };
 
+// player info
 var player = {
-    id: -1,
-    x: screenWidth / 2,
+    id: -1,                                               // player id
+    x: screenWidth / 2,                                   // player always in the center of the screen
     y: screenHeight / 2,
     screenWidth: screenWidth,
     screenHeight: screenHeight,
@@ -150,6 +175,14 @@ var reenviar = true;
 var directionLock = false;
 var directions = [];
 
+/*  
+* === FUNCTION ====================================================================== 
+* Name: canvas events 
+* Author: Firebb
+* Description: add event to the canvas
+* c for canvas
+* ===================================================================================== 
+*/ 
 var c = document.getElementById('cvs');
 c.width = screenWidth; c.height = screenHeight;
 c.addEventListener('mousemove', gameInput, false);
@@ -160,31 +193,55 @@ c.addEventListener('keydown', directionDown, false);
 c.addEventListener('touchstart', touchInput, false);
 c.addEventListener('touchmove', touchInput, false);
 
-// register when the mouse goes off the canvas
+/*  
+* === FUNCTION ====================================================================== 
+* Name: window onload 
+* Author: Firebb
+* Description: register when the mouse goes off the canvas
+* ===================================================================================== 
+*/ 
 function outOfBounds() {
-    if (!continuity) {
+    if (!continuity) {			// mouse out of canvas, if set continuity in settings keep moving otherwise stop
         target = { x : 0, y: 0 };
     }
 }
 
+// visibility of the border
 var visibleBorderSetting = document.getElementById('visBord');
 visibleBorderSetting.onchange = toggleBorder;
 
+// show message 
 var showMassSetting = document.getElementById('showMass');
 showMassSetting.onchange = toggleMass;
 
+// continuity for mouse out of canvas
 var continuitySetting = document.getElementById('continuity');
 continuitySetting.onchange = toggleContinuity;
 
+// canvas 2d painter, graph used for further painting
 var graph = c.getContext('2d');
 
+/*  
+* === FUNCTION ====================================================================== 
+* Name: ChatClient 
+* Author: Firebb
+* Description: bind component
+* ===================================================================================== 
+*/ 
 function ChatClient(config) {
     this.commands = {};
     var input = document.getElementById('chatInput');
     input.addEventListener('keypress', this.sendChat.bind(this));
 }
 
-/** template into chat box a new message from a player */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: generate dom object for the message
+* Author: Firebb
+* Description: template into chat box a new message from a player 
+* args(sender's name, sendmessage, if it is me)
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.addChatLine = function (name, message, me) {
     if (mobile) {
         return;
@@ -199,7 +256,14 @@ ChatClient.prototype.addChatLine = function (name, message, me) {
 };
 
 
-/** template into chat box a new message from the application */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: create dom object for system message 
+* Author: Firebb
+* Description:  template into chat box a new message from the application 
+* args(system message)
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.addSystemLine = function (message) {
     if (mobile) {
         return;
@@ -214,7 +278,14 @@ ChatClient.prototype.addSystemLine = function (message) {
     this.appendMessage(newline);
 };
 
-/** templates the message DOM node into the messsage area */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: append the dom object after call addChatLine 
+* Author: Firebb
+* Description:  templates the message DOM node into the messsage area
+* args(node)
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.appendMessage = function (node) {
     if (mobile) {
         return;
@@ -226,7 +297,13 @@ ChatClient.prototype.appendMessage = function (node) {
     chatList.appendChild(node);
 };
 
-/** sends a message or executes a command on the ENTER key */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: append the dom object after call addChatLine 
+* Author: Firebb
+* Description:  sends a message or executes a command on the ENTER key 
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.sendChat = function (key) {
     var commands = this.commands,
         input = document.getElementById('chatInput');
@@ -258,7 +335,13 @@ ChatClient.prototype.sendChat = function (key) {
     }
 };
 
-/** add a new chat command */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: resgister command
+* Author: Firebb
+* Description:  add a new chat command
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.registerCommand = function (name, description, callback) {
     this.commands[name] = {
         description: description,
@@ -266,7 +349,13 @@ ChatClient.prototype.registerCommand = function (name, description, callback) {
     };
 };
 
-/** print help of all chat commands available */
+/*  
+* === FUNCTION ====================================================================== 
+* Name: print help
+* Author: Firebb
+* Description:  print help of all chat commands available 
+* ===================================================================================== 
+*/ 
 ChatClient.prototype.printHelp = function () {
     var commands = this.commands;
     for (var cmd in commands) {
@@ -278,7 +367,13 @@ ChatClient.prototype.printHelp = function () {
 
 var chat = new ChatClient();
 
-// chat command callback functions
+/*  
+* === FUNCTION ====================================================================== 
+* Name: print help
+* Author: Firebb
+* Description:  chat command callback functions
+* ===================================================================================== 
+*/ 
 function keyInput(event) {
 	var key = event.which || event.keyCode;
 	if(key === KEY_FIREFOOD && reenviar) {
