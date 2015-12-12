@@ -375,8 +375,8 @@ var chat = new ChatClient();
 * ===================================================================================== 
 */ 
 function keyInput(event) {
-	var key = event.which || event.keyCode;
-	if(key === KEY_FIREFOOD && reenviar) {
+    var key = event.which || event.keyCode;
+    if(key === KEY_FIREFOOD && reenviar) {
         socket.emit('1');
         reenviar = false;
     }
@@ -589,7 +589,7 @@ function setupSocket(socket) {
         if (mobile) {
             document.getElementById('gameAreaWrapper').removeChild(document.getElementById('chatbox'));
         }
-		document.getElementById('cvs').focus();
+    	document.getElementById('cvs').focus();
     });
 
     socket.on('gameSetup', function(data) {
@@ -921,6 +921,7 @@ function animloop() {
 
 function gameLoop() {
     if (died) {
+	// show the dead message
         graph.fillStyle = '#333333';
         graph.fillRect(0, 0, screenWidth, screenHeight);
 
