@@ -670,14 +670,14 @@ function setupSocket(socket) {
             status += '<br />';
             if (leaderboard[i].id == player.id){
                 if(leaderboard[i].name.length !== 0)
-                    status += '<span class="me">' + (i + 1) + '. ' + leaderboard[i].name + "</span>";
+                    status += '<span class="me">' + (i + 1) + '. ' + leaderboard[i].name + ": " + leaderboard[i].mass + "</span>";
                 else
-                    status += '<span class="me">' + (i + 1) + ". A cell unnamed</span>";
+                    status += '<span class="me">' + (i + 1) + ". A cell unnamed" + ": " + leaderboard[i].mass + "</span>";
             } else {
                 if(leaderboard[i].name.length !== 0)
-                    status += (i + 1) + '. ' + leaderboard[i].name;
+                    status += (i + 1) + '. ' + leaderboard[i].name + ": " + leaderboard[i].mass;
                 else
-                    status += (i + 1) + '. A cell unnamed';
+                    status += (i + 1) + '. A cell unnamed' + ": " + leaderboard[i].mass;
             }
         }
         //status += '<br />Players: ' + data.players;
@@ -710,7 +710,7 @@ function setupSocket(socket) {
             player.y = playerData.y;
             player.hue = playerData.hue;
             player.massTotal = playerData.massTotal;
-            player.cells = playerData.cells;
+            player.cells = playerData.cells;		    // my cells for splitting
             player.xoffset = isNaN(xoffset) ? 0 : xoffset;
             player.yoffset = isNaN(yoffset) ? 0 : yoffset;
         }
