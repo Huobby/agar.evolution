@@ -17,10 +17,11 @@ var animLoopHandle;
 var spin = -Math.PI;
 var enemySpin = -Math.PI;
 var mobile = false;
+var bot;
 
 var debug = function(args) {
     if (console && console.log) {
-        console.log(args);
+	console.log(args);
     }
 };
 
@@ -29,12 +30,12 @@ if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) ) {
 }
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: startGame  
-* Author: Firebb
-* Description:  game entry
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: startGame  
+ * Author: Firebb
+ * Description:  game entry
+ * ===================================================================================== 
+ */ 
 function startGame(type) {
     playerName = playerNameInput.value.replace(/(<([^>]+)>)/ig, '').substring(0,25);
     playerType = type;
@@ -45,21 +46,22 @@ function startGame(type) {
     document.getElementById('startMenuWrapper').style.maxHeight = '0px';
     document.getElementById('gameAreaWrapper').style.opacity = 1;
     if (!socket) {
-        socket = io({query:"type=" + type});
-        setupSocket(socket);
+	socket = io({query:"type=" + type});
+	setupSocket(socket);
     }
     if (!animLoopHandle)
-        animloop();
+	animloop();
     socket.emit('respawn');
+    //bot = new smartBot();
 }
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: validNick 
-* Author: Firebb
-* Description: check if nick is valid alphanumeric characters (and underscores)
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: validNick 
+ * Author: Firebb
+ * Description: check if nick is valid alphanumeric characters (and underscores)
+ * ===================================================================================== 
+ */ 
 function validNick() {
     var regex = /^\w*$/;
     debug('Regex Test', regex.exec(playerNameInput.value));
@@ -67,30 +69,30 @@ function validNick() {
 }
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: window onload 
-* Author: Firebb
-* Description: add event to the welcome page button
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: window onload 
+ * Author: Firebb
+ * Description: add event to the welcome page button
+ * ===================================================================================== 
+ */ 
 window.onload = function() {
 
     var btn = document.getElementById('startButton'),
-        btnS = document.getElementById('spectateButton'),
-        nickErrorText = document.querySelector('#startMenu .input-error');
+	btnS = document.getElementById('spectateButton'),
+	nickErrorText = document.querySelector('#startMenu .input-error');
 
     btnS.onclick = function () {
-        startGame('spectate');
+	startGame('spectate');
     };
     btn.onclick = function () {
 
-        // check if the nick is valid
-        if (validNick()) {
-            nickErrorText.style.opacity = 0;
-            startGame('player');
-        } else {
-            nickErrorText.style.opacity = 1;
-        }
+	// check if the nick is valid
+	if (validNick()) {
+	    nickErrorText.style.opacity = 0;
+	    startGame('player');
+	} else {
+	    nickErrorText.style.opacity = 1;
+	}
     };
 
     var settingsMenu = document.getElementById('settingsButton');
@@ -99,26 +101,26 @@ window.onload = function() {
 
     // show the setting Menu
     settingsMenu.onclick = function () {
-        if (settings.style.maxHeight == '300px') {
-            settings.style.maxHeight = '0px';
-        } else {
-            settings.style.maxHeight = '300px';
-        }
+	if (settings.style.maxHeight == '300px') {
+	    settings.style.maxHeight = '0px';
+	} else {
+	    settings.style.maxHeight = '300px';
+	}
     };
 
     // input player name
     playerNameInput.addEventListener('keypress', function (e) {
-        var key = e.which || e.keyCode;
+	    var key = e.which || e.keyCode;
 
-        if (key === KEY_ENTER) {
-            if (validNick()) {
-                nickErrorText.style.opacity = 0;
-                startGame('player');
-            } else {
-                nickErrorText.style.opacity = 1;
-            }
-        }
-    });
+	    if (key === KEY_ENTER) {
+	    if (validNick()) {
+	    nickErrorText.style.opacity = 0;
+	    startGame('player');
+	    } else {
+	    nickErrorText.style.opacity = 1;
+	    }
+	    }
+	    });
 };
 
 // Canvas parameters
@@ -144,21 +146,21 @@ var lineColor = '#000000';
 
 // 
 var foodConfig = {
-    border: 0,          
+border: 0,          
 };
 
 //
 var playerConfig = {
-    border: 6,
-    textColor: '#FFFFFF',
-    textBorder: '#000000',
-    textBorderSize: 3,
-    defaultSize: 30
+border: 6,
+	textColor: '#FFFFFF',
+	textBorder: '#000000',
+	textBorderSize: 3,
+	defaultSize: 30
 };
 
 // player info
 var player = {
-    id: -1,                                               // player id
+id: -1,                                               // player id
     x: screenWidth / 2,                                   // player always in the center of the screen
     y: screenHeight / 2,
     screenWidth: screenWidth,
@@ -178,13 +180,13 @@ var directionLock = false;
 var directions = [];
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: canvas events 
-* Author: Firebb
-* Description: add event to the canvas
-* c for canvas
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: canvas events 
+ * Author: Firebb
+ * Description: add event to the canvas
+ * c for canvas
+ * ===================================================================================== 
+ */ 
 var c = document.getElementById('cvs');
 c.width = screenWidth; c.height = screenHeight;
 c.addEventListener('mousemove', gameInput, false);
@@ -196,15 +198,15 @@ c.addEventListener('touchstart', touchInput, false);
 c.addEventListener('touchmove', touchInput, false);
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: window onload 
-* Author: Firebb
-* Description: register when the mouse goes off the canvas
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: window onload 
+ * Author: Firebb
+ * Description: register when the mouse goes off the canvas
+ * ===================================================================================== 
+ */ 
 function outOfBounds() {
     if (!continuity) {			// mouse out of canvas, if set continuity in settings keep moving otherwise stop
-        target = { x : 0, y: 0 };
+	target = { x : 0, y: 0 };
     }
 }
 
@@ -224,12 +226,12 @@ continuitySetting.onchange = toggleContinuity;
 var graph = c.getContext('2d');
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: ChatClient 
-* Author: Firebb
-* Description: bind component
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: ChatClient 
+ * Author: Firebb
+ * Description: bind component
+ * ===================================================================================== 
+ */ 
 function ChatClient(config) {
     this.commands = {};
     var input = document.getElementById('chatInput');
@@ -237,16 +239,16 @@ function ChatClient(config) {
 }
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: generate dom object for the message
-* Author: Firebb
-* Description: template into chat box a new message from a player 
-* args(sender's name, sendmessage, if it is me)
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: generate dom object for the message
+ * Author: Firebb
+ * Description: template into chat box a new message from a player 
+ * args(sender's name, sendmessage, if it is me)
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.addChatLine = function (name, message, me) {
     if (mobile) {
-        return;
+	return;
     }
     var newline = document.createElement('li');
 
@@ -259,16 +261,16 @@ ChatClient.prototype.addChatLine = function (name, message, me) {
 
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: create dom object for system message 
-* Author: Firebb
-* Description:  template into chat box a new message from the application 
-* args(system message)
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: create dom object for system message 
+ * Author: Firebb
+ * Description:  template into chat box a new message from the application 
+ * args(system message)
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.addSystemLine = function (message) {
     if (mobile) {
-        return;
+	return;
     }
     var newline = document.createElement('li');
 
@@ -281,110 +283,110 @@ ChatClient.prototype.addSystemLine = function (message) {
 };
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: append the dom object after call addChatLine 
-* Author: Firebb
-* Description:  templates the message DOM node into the messsage area
-* args(node)
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: append the dom object after call addChatLine 
+ * Author: Firebb
+ * Description:  templates the message DOM node into the messsage area
+ * args(node)
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.appendMessage = function (node) {
     if (mobile) {
-        return;
+	return;
     }
     var chatList = document.getElementById('chatList');
     if (chatList.childNodes.length > 10) {
-        chatList.removeChild(chatList.childNodes[0]);
+	chatList.removeChild(chatList.childNodes[0]);
     }
     chatList.appendChild(node);
 };
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: append the dom object after call addChatLine 
-* Author: Firebb
-* Description:  sends a message or executes a command on the ENTER key 
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: append the dom object after call addChatLine 
+ * Author: Firebb
+ * Description:  sends a message or executes a command on the ENTER key 
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.sendChat = function (key) {
     var commands = this.commands,
-        input = document.getElementById('chatInput');
+	input = document.getElementById('chatInput');
 
     key = key.which || key.keyCode;
 
     if (key === KEY_ENTER) {
-        var text = input.value.replace(/(<([^>]+)>)/ig,'');
-        if (text !== '') {
+	var text = input.value.replace(/(<([^>]+)>)/ig,'');
+	if (text !== '') {
 
-            // this is a chat command
-            if (text.indexOf('-') === 0) {
-                var args = text.substring(1).split(' ');
-                if (commands[args[0]]) {
-                    commands[args[0]].callback(args.slice(1));
-                } else {
-                    this.addSystemLine('Unrecoginised Command: ' + text + ', type -help for more info');
-                }
+	    // this is a chat command
+	    if (text.indexOf('-') === 0) {
+		var args = text.substring(1).split(' ');
+		if (commands[args[0]]) {
+		    commands[args[0]].callback(args.slice(1));
+		} else {
+		    this.addSystemLine('Unrecoginised Command: ' + text + ', type -help for more info');
+		}
 
-            // just a regular message - send along to server
-            } else {
-                socket.emit('playerChat', { sender: player.name, message: text });
-                this.addChatLine(player.name, text, true);
-            }
+		// just a regular message - send along to server
+	    } else {
+		socket.emit('playerChat', { sender: player.name, message: text });
+		this.addChatLine(player.name, text, true);
+	    }
 
-            // reset input
-            input.value = '';
-        }
+	    // reset input
+	    input.value = '';
+	}
     }
 };
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: resgister command
-* Author: Firebb
-* Description:  add a new chat command
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: resgister command
+ * Author: Firebb
+ * Description:  add a new chat command
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.registerCommand = function (name, description, callback) {
     this.commands[name] = {
-        description: description,
-        callback: callback
+description: description,
+	     callback: callback
     };
 };
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: print help
-* Author: Firebb
-* Description:  print help of all chat commands available 
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: print help
+ * Author: Firebb
+ * Description:  print help of all chat commands available 
+ * ===================================================================================== 
+ */ 
 ChatClient.prototype.printHelp = function () {
     var commands = this.commands;
     for (var cmd in commands) {
-        if (commands.hasOwnProperty(cmd)) {
-            this.addSystemLine('-' + cmd + ': ' + commands[cmd].description);
-        }
+	if (commands.hasOwnProperty(cmd)) {
+	    this.addSystemLine('-' + cmd + ': ' + commands[cmd].description);
+	}
     }
 };
 
 var chat = new ChatClient();
 
 /*  
-* === FUNCTION ====================================================================== 
-* Name: print help
-* Author: Firebb
-* Description:  chat command callback functions
-* ===================================================================================== 
-*/ 
+ * === FUNCTION ====================================================================== 
+ * Name: print help
+ * Author: Firebb
+ * Description:  chat command callback functions
+ * ===================================================================================== 
+ */ 
 function keyInput(event) {
     var key = event.which || event.keyCode;
     if(key === KEY_FIREFOOD && reenviar) {
-        socket.emit('1');
-        reenviar = false;
+	socket.emit('1');
+	reenviar = false;
     }
     else if(key === KEY_SPLIT && reenviar) {
-        socket.emit('2');
-        reenviar = false;
+	socket.emit('2');
+	reenviar = false;
     }
 }
 
@@ -396,15 +398,15 @@ function keyInput(event) {
  * ===================================================================================== 
  */ 
 function directionDown(event) {
-	var key = event.which || event.keyCode;
+    var key = event.which || event.keyCode;
 
-	if (directional(key)) {
-		directionLock = true;
-		if (newDirection(key,directions, true)) {
-			updateTarget(directions);
-			socket.emit('0', target);
-		}
+    if (directional(key)) {
+	directionLock = true;
+	if (newDirection(key,directions, true)) {
+	    updateTarget(directions);
+	    socket.emit('0', target);
 	}
+    }
 }
 /*  
  * === FUNCTION ====================================================================== 
@@ -414,14 +416,14 @@ function directionDown(event) {
  * ===================================================================================== 
  */ 
 function directionUp(event) {
-	var key = event.which || event.keyCode;
-	if (directional(key)) {
-		if (newDirection(key,directions, false)) {
-			updateTarget(directions);
-			if (directions.length === 0) directionLock = false;
-			socket.emit('0', target);
-		}
+    var key = event.which || event.keyCode;
+    if (directional(key)) {
+	if (newDirection(key,directions, false)) {
+	    updateTarget(directions);
+	    if (directions.length === 0) directionLock = false;
+	    socket.emit('0', target);
 	}
+    }
 }
 /*  
  * === FUNCTION ====================================================================== 
@@ -431,26 +433,26 @@ function directionUp(event) {
  * ===================================================================================== 
  */ 
 function newDirection(direction, list, isAddition) {
-	var result = false;
-	var found = false;
-	for (var i = 0, len = list.length; i < len; i++) {
-		if (list[i] == direction) {
-			found = true;
-			if (!isAddition) {
-				result = true;
-				//remove the direction
-				list.splice(i, 1);
-			}
-			break;
-		}
-	}
-	//add the direction
-	if (isAddition && found === false) {
+    var result = false;
+    var found = false;
+    for (var i = 0, len = list.length; i < len; i++) {
+	if (list[i] == direction) {
+	    found = true;
+	    if (!isAddition) {
 		result = true;
-		list.push(direction);
+		//remove the direction
+		list.splice(i, 1);
+	    }
+	    break;
 	}
+    }
+    //add the direction
+    if (isAddition && found === false) {
+	result = true;
+	list.push(direction);
+    }
 
-	return result;
+    return result;
 }
 
 /*  
@@ -465,21 +467,21 @@ function newDirection(direction, list, isAddition) {
 //target就是玩家控制的小球的位置，updateTarget 就是根据direction array里面储存的运动方向改变小球的位置
 
 function updateTarget(list) {
-	target = { x : 0, y: 0 };
-	var directionHorizontal = 0;
-	var directionVertical = 0;
-	for (var i = 0, len = list.length; i < len; i++) {
-		if (directionHorizontal === 0) {
-			if (list[i] == KEY_LEFT) directionHorizontal -= Number.MAX_VALUE;
-			else if (list[i] == KEY_RIGHT) directionHorizontal += Number.MAX_VALUE;
-		}
-		if (directionVertical === 0) {
-			if (list[i] == KEY_UP) directionVertical -= Number.MAX_VALUE;
-			else if (list[i] == KEY_DOWN) directionVertical += Number.MAX_VALUE;
-		}
+    target = { x : 0, y: 0 };
+    var directionHorizontal = 0;
+    var directionVertical = 0;
+    for (var i = 0, len = list.length; i < len; i++) {
+	if (directionHorizontal === 0) {
+	    if (list[i] == KEY_LEFT) directionHorizontal -= Number.MAX_VALUE;
+	    else if (list[i] == KEY_RIGHT) directionHorizontal += Number.MAX_VALUE;
 	}
-	target.x += directionHorizontal;
-	target.y += directionVertical;
+	if (directionVertical === 0) {
+	    if (list[i] == KEY_UP) directionVertical -= Number.MAX_VALUE;
+	    else if (list[i] == KEY_DOWN) directionVertical += Number.MAX_VALUE;
+	}
+    }
+    target.x += directionHorizontal;
+    target.y += directionVertical;
 }
 
 /*  
@@ -491,15 +493,15 @@ function updateTarget(list) {
  */ 
 
 function directional(key) {
-	return horizontal(key) || vertical(key);
+    return horizontal(key) || vertical(key);
 }
 
 function horizontal(key) {
-	return key == KEY_LEFT || key == KEY_RIGHT;
+    return key == KEY_LEFT || key == KEY_RIGHT;
 }
 
 function vertical(key) {
-	return key == KEY_DOWN || key == KEY_UP;
+    return key == KEY_DOWN || key == KEY_UP;
 }
 function checkLatency() {
     // Ping
@@ -516,48 +518,48 @@ function checkLatency() {
  */ 
 function toggleDarkMode() {
     var LIGHT = '#f2fbff',
-        DARK = '#181818';
+	DARK = '#181818';
     var LINELIGHT = '#000000',
-        LINEDARK = '#ffffff';
+	LINEDARK = '#ffffff';
 
     if (backgroundColor === LIGHT) {
-        backgroundColor = DARK;
-        lineColor = LINEDARK;
-        chat.addSystemLine('Dark mode enabled');
+	backgroundColor = DARK;
+	lineColor = LINEDARK;
+	chat.addSystemLine('Dark mode enabled');
     } else {
-        backgroundColor = LIGHT;
-        lineColor = LINELIGHT;
-        chat.addSystemLine('Dark mode disabled');
+	backgroundColor = LIGHT;
+	lineColor = LINELIGHT;
+	chat.addSystemLine('Dark mode disabled');
     }
 }
 
 function toggleBorder(args) {
     if (!borderDraw) {
-        borderDraw = true;
-        chat.addSystemLine('Showing border');
+	borderDraw = true;
+	chat.addSystemLine('Showing border');
     } else {
-        borderDraw = false;
-        chat.addSystemLine('Hiding border');
+	borderDraw = false;
+	chat.addSystemLine('Hiding border');
     }
 }
 
 function toggleMass(args) {
     if (toggleMassState === 0) {
-        toggleMassState = 1;
-        chat.addSystemLine('Mass mode activated!');
+	toggleMassState = 1;
+	chat.addSystemLine('Mass mode activated!');
     } else {
-        toggleMassState = 0;
-        chat.addSystemLine('Mass mode deactivated!');
+	toggleMassState = 0;
+	chat.addSystemLine('Mass mode deactivated!');
     }
 }
 
 function toggleContinuity(args) {
     if (!continuity) {
-        continuity = true;
-        chat.addSystemLine('Continuity activated!');
+	continuity = true;
+	chat.addSystemLine('Continuity activated!');
     } else {
-        continuity = false;
-        chat.addSystemLine('Continuity deactivated!');
+	continuity = false;
+	chat.addSystemLine('Continuity deactivated!');
     }
 }
 
@@ -569,36 +571,36 @@ function toggleContinuity(args) {
  * ===================================================================================== 
  */ 
 chat.registerCommand('ping', 'Check your latency', function () {
-    checkLatency();
-});
+	checkLatency();
+	});
 
 chat.registerCommand('dark', 'Toggle dark mode', function () {
-    toggleDarkMode();
-});
+	toggleDarkMode();
+	});
 
 chat.registerCommand('border', 'Toggle border', function () {
-    toggleBorder();
-});
+	toggleBorder();
+	});
 
 chat.registerCommand('mass', 'View mass', function () {
-    toggleMass();
-});
+	toggleMass();
+	});
 
 chat.registerCommand('continuity', 'Toggle continuity', function () {
-    toggleContinuity();
-});
+	toggleContinuity();
+	});
 
 chat.registerCommand('help', 'Chat commands information', function () {
-    chat.printHelp();
-});
+	chat.printHelp();
+	});
 
 chat.registerCommand('login', 'Login as an admin', function (args) {
-    socket.emit('pass', args);
-});
+	socket.emit('pass', args);
+	});
 
 chat.registerCommand('kick', 'Kick a player', function (args) {
-    socket.emit('kick', args);
-});
+	socket.emit('kick', args);
+	});
 
 
 /*  
@@ -611,135 +613,135 @@ chat.registerCommand('kick', 'Kick a player', function (args) {
 function setupSocket(socket) {
     // Handle ping
     socket.on('pong', function () {
-        var latency = Date.now() - startPingTime;
-        debug('Latency: ' + latency + 'ms');
-        chat.addSystemLine('Ping: ' + latency + 'ms');
-    });
+	    var latency = Date.now() - startPingTime;
+	    debug('Latency: ' + latency + 'ms');
+	    chat.addSystemLine('Ping: ' + latency + 'ms');
+	    });
 
     // Handle error
     socket.on('connect_failed', function () {
-        socket.close();
-        disconnected = true;
-    });
+	    socket.close();
+	    disconnected = true;
+	    });
 
     socket.on('disconnect', function () {
-        socket.close();
-        disconnected = true;
-    });
+	    socket.close();
+	    disconnected = true;
+	    });
 
     // Handle connection
     socket.on('welcome', function (playerSettings) {
-        player = playerSettings;
-        player.name = playerName;
-        player.screenWidth = screenWidth;
-        player.screenHeight = screenHeight;
-        player.target = target;
-        socket.emit('gotit', player);
-        gameStart = true;
-        debug('Game is started: ' + gameStart);
-        chat.addSystemLine('Connected to the game!');
-        chat.addSystemLine('Type <b>-help</b> for a list of commands');
-        if (mobile) {
-            document.getElementById('gameAreaWrapper').removeChild(document.getElementById('chatbox'));
-        }
-    	document.getElementById('cvs').focus();
-    });
+	    player = playerSettings;
+	    player.name = playerName;
+	    player.screenWidth = screenWidth;
+	    player.screenHeight = screenHeight;
+	    player.target = target;
+	    socket.emit('gotit', player);
+	    gameStart = true;
+	    debug('Game is started: ' + gameStart);
+	    chat.addSystemLine('Connected to the game!');
+	    chat.addSystemLine('Type <b>-help</b> for a list of commands');
+	    if (mobile) {
+	    document.getElementById('gameAreaWrapper').removeChild(document.getElementById('chatbox'));
+	    }
+	    document.getElementById('cvs').focus();
+	    });
 
     socket.on('gameSetup', function(data) {
-        gameWidth = data.gameWidth;
-        gameHeight = data.gameHeight;
-        resize();
-    });
+	    gameWidth = data.gameWidth;
+	    gameHeight = data.gameHeight;
+	    resize();
+	    });
 
     socket.on('playerDied', function (data) {
-        chat.addSystemLine('Player <b>' + data.name + '</b> died!');
-    });
+	    chat.addSystemLine('Player <b>' + data.name + '</b> died!');
+	    });
 
     socket.on('playerDisconnect', function (data) {
-        chat.addSystemLine('Player <b>' + data.name + '</b> disconnected!');
-    });
+	    chat.addSystemLine('Player <b>' + data.name + '</b> disconnected!');
+	    });
 
     socket.on('playerJoin', function (data) {
-        chat.addSystemLine('Player <b>' + data.name + '</b> joined!');
-    });
+	    chat.addSystemLine('Player <b>' + data.name + '</b> joined!');
+	    });
 
     socket.on('leaderboard', function (data) {
-        leaderboard = data.leaderboard;
-        var status = '<span class="title">Leaderboard</span>';
-        for (var i = 0; i < leaderboard.length; i++) {
-            status += '<br />';
-            if (leaderboard[i].id == player.id){
-                if(leaderboard[i].name.length !== 0)
-                    status += '<span class="me">' + (i + 1) + '. ' + leaderboard[i].name + ": " + leaderboard[i].mass + "</span>";
-                else
-                    status += '<span class="me">' + (i + 1) + ". A cell unnamed" + ": " + leaderboard[i].mass + "</span>";
-            } else {
-                if(leaderboard[i].name.length !== 0)
-                    status += (i + 1) + '. ' + leaderboard[i].name + ": " + leaderboard[i].mass;
-                else
-                    status += (i + 1) + '. A cell unnamed' + ": " + leaderboard[i].mass;
-            }
-        }
-        //status += '<br />Players: ' + data.players;
-        document.getElementById('status').innerHTML = status;
-    });
+	    leaderboard = data.leaderboard;
+	    var status = '<span class="title">Leaderboard</span>';
+	    for (var i = 0; i < leaderboard.length; i++) {
+	    status += '<br />';
+	    if (leaderboard[i].id == player.id){
+	    if(leaderboard[i].name.length !== 0)
+	    status += '<span class="me">' + (i + 1) + '. ' + leaderboard[i].name + ": " + Math.round(leaderboard[i].mass) + "</span>";
+	    else
+	    status += '<span class="me">' + (i + 1) + ". A cell unnamed" + ": " + Math.round(leaderboard[i].mass) + "</span>";
+	    } else {
+	    if(leaderboard[i].name.length !== 0)
+	    status += (i + 1) + '. ' + leaderboard[i].name + ": " + Math.round(leaderboard[i].mass);
+	    else
+	    status += (i + 1) + '. A cell unnamed' + ": " + Math.round(leaderboard[i].mass);
+	    }
+	    }
+	    //status += '<br />Players: ' + data.players;
+	    document.getElementById('status').innerHTML = status;
+	    });
 
     socket.on('serverMSG', function (data) {
-        chat.addSystemLine(data);
-    });
+	    chat.addSystemLine(data);
+	    });
 
     // Chat
     socket.on('serverSendPlayerChat', function (data) {
-        chat.addChatLine(data.sender, data.message, false);
-    });
+	    chat.addChatLine(data.sender, data.message, false);
+	    });
 
     // Handle movement
     socket.on('serverTellPlayerMove', function (userData, foodsList, massList) {
-        var playerData;
-        for(var i =0; i< userData.length; i++) {
-            if(typeof(userData[i].id) == "undefined") {
-                playerData = userData[i];
-                i = userData.length;
-            }
-        }
-        if(playerType == 'player') {
-            var xoffset = player.x - playerData.x;
-            var yoffset = player.y - playerData.y;
+	    var playerData;
+	    for(var i =0; i< userData.length; i++) {
+	    if(typeof(userData[i].id) == "undefined") {
+	    playerData = userData[i];
+	    i = userData.length;
+	    }
+	    }
+	    if(playerType == 'player') {
+	    var xoffset = player.x - playerData.x;
+	    var yoffset = player.y - playerData.y;
 
-            player.x = playerData.x;
-            player.y = playerData.y;
-            player.hue = playerData.hue;
-            player.massTotal = playerData.massTotal;
-            player.cells = playerData.cells;		    // my cells for splitting
-            player.xoffset = isNaN(xoffset) ? 0 : xoffset;
-            player.yoffset = isNaN(yoffset) ? 0 : yoffset;
-        }
-        users = userData;
-        foods = foodsList;
-        fireFood = massList;
+	    player.x = playerData.x;
+	    player.y = playerData.y;
+	    player.hue = playerData.hue;
+	    player.massTotal = playerData.massTotal;
+	    player.cells = playerData.cells;		    // my cells for splitting
+	    player.xoffset = isNaN(xoffset) ? 0 : xoffset;
+	    player.yoffset = isNaN(yoffset) ? 0 : yoffset;
+	    }
+	    users = userData;
+	    foods = foodsList;
+	    fireFood = massList;
     });
 
     // Die
     socket.on('RIP', function () {
-        gameStart = false;
-        died = true;
-        window.setTimeout(function() {
-            document.getElementById('gameAreaWrapper').style.opacity = 0;
-            document.getElementById('startMenuWrapper').style.maxHeight = '1000px';
-            died = false;
-            if (animLoopHandle) {
-                window.cancelAnimationFrame(animLoopHandle);
-                animLoopHandle = undefined;
-            }
-        }, 2500);
-    });
+	    gameStart = false;
+	    died = true;
+	    window.setTimeout(function() {
+		document.getElementById('gameAreaWrapper').style.opacity = 0;
+		document.getElementById('startMenuWrapper').style.maxHeight = '1000px';
+		died = false;
+		if (animLoopHandle) {
+		window.cancelAnimationFrame(animLoopHandle);
+		animLoopHandle = undefined;
+		}
+		}, 2500);
+	    });
 
     socket.on('kick', function (data) {
-        gameStart = false;
-        reason = data;
-        kicked = true;
-        socket.close();
-    });
+	    gameStart = false;
+	    reason = data;
+	    kicked = true;
+	    socket.close();
+	    });
 }
 
 /*  
@@ -757,10 +759,10 @@ function drawCircle(centerX, centerY, radius, sides) {
     graph.beginPath();
 
     for (var i = 0; i < sides; i++) {
-        theta = (i / sides) * 2 * Math.PI;
-        x = centerX + radius * Math.sin(theta);
-        y = centerY + radius * Math.cos(theta);
-        graph.lineTo(x, y);
+	theta = (i / sides) * 2 * Math.PI;
+	x = centerX + radius * Math.sin(theta);
+	y = centerY + radius * Math.cos(theta);
+	graph.lineTo(x, y);
     }
 
     graph.closePath();
@@ -804,97 +806,97 @@ function drawFireFood(mass) {
  */ 
 function drawPlayers(order) {
     var start = {
-        x: player.x - (screenWidth / 2),
-        y: player.y - (screenHeight / 2)
+x: player.x - (screenWidth / 2),
+   y: player.y - (screenHeight / 2)
     };
 
     for(var z=0; z<order.length; z++)
     {
-        var userCurrent = users[order[z].nCell];
-        var cellCurrent = users[order[z].nCell].cells[order[z].nDiv];
+	var userCurrent = users[order[z].nCell];
+	var cellCurrent = users[order[z].nCell].cells[order[z].nDiv];
 
-        var x=0;
-        var y=0;
+	var x=0;
+	var y=0;
 
-        var points = 30 + ~~(cellCurrent.mass/5);
-        var increase = Math.PI * 2 / points;
+	var points = 30 + ~~(cellCurrent.mass/5);
+	var increase = Math.PI * 2 / points;
 
-        graph.strokeStyle = 'hsl(' + userCurrent.hue + ', 100%, 45%)';
-        graph.fillStyle = 'hsl(' + userCurrent.hue + ', 100%, 50%)';
-        graph.lineWidth = playerConfig.border;
+	graph.strokeStyle = 'hsl(' + userCurrent.hue + ', 100%, 45%)';
+	graph.fillStyle = 'hsl(' + userCurrent.hue + ', 100%, 50%)';
+	graph.lineWidth = playerConfig.border;
 
-        var xstore = [];
-        var ystore = [];
+	var xstore = [];
+	var ystore = [];
 
-        spin += 0.0;
+	spin += 0.0;
 
-        var circle = {
-            x: cellCurrent.x - start.x,
-            y: cellCurrent.y - start.y
-        };
+	var circle = {
+x: cellCurrent.x - start.x,
+   y: cellCurrent.y - start.y
+	};
 
-        for (var i = 0; i < points; i++) {
+	for (var i = 0; i < points; i++) {
 
-            x = cellCurrent.radius * Math.cos(spin) + circle.x;
-            y = cellCurrent.radius * Math.sin(spin) + circle.y;
-            if(typeof(userCurrent.id) == "undefined") {
-                x = valueInRange(-userCurrent.x + screenWidth / 2, gameWidth - userCurrent.x + screenWidth / 2, x);
-                y = valueInRange(-userCurrent.y + screenHeight / 2, gameHeight - userCurrent.y + screenHeight / 2, y);
-            } else {
-                x = valueInRange(-cellCurrent.x - player.x + screenWidth/2 + (cellCurrent.radius/3), gameWidth - cellCurrent.x + gameWidth - player.x + screenWidth/2 - (cellCurrent.radius/3), x);
-                y = valueInRange(-cellCurrent.y - player.y + screenHeight/2 + (cellCurrent.radius/3), gameHeight - cellCurrent.y + gameHeight - player.y + screenHeight/2 - (cellCurrent.radius/3) , y);
-            }
-            spin += increase;
-            xstore[i] = x;
-            ystore[i] = y;
-        }
-        /*if (wiggle >= player.radius/ 3) inc = -1;
-        *if (wiggle <= player.radius / -3) inc = +1;
-        *wiggle += inc;
-        */
-        for (i = 0; i < points; ++i) {
-            if (i === 0) {
-                graph.beginPath();
-                graph.moveTo(xstore[i], ystore[i]);
-            } else if (i > 0 && i < points - 1) {
-                graph.lineTo(xstore[i], ystore[i]);
-            } else {
-                graph.lineTo(xstore[i], ystore[i]);
-                graph.lineTo(xstore[0], ystore[0]);
-            }
+	    x = cellCurrent.radius * Math.cos(spin) + circle.x;
+	    y = cellCurrent.radius * Math.sin(spin) + circle.y;
+	    if(typeof(userCurrent.id) == "undefined") {
+		x = valueInRange(-userCurrent.x + screenWidth / 2, gameWidth - userCurrent.x + screenWidth / 2, x);
+		y = valueInRange(-userCurrent.y + screenHeight / 2, gameHeight - userCurrent.y + screenHeight / 2, y);
+	    } else {
+		x = valueInRange(-cellCurrent.x - player.x + screenWidth/2 + (cellCurrent.radius/3), gameWidth - cellCurrent.x + gameWidth - player.x + screenWidth/2 - (cellCurrent.radius/3), x);
+		y = valueInRange(-cellCurrent.y - player.y + screenHeight/2 + (cellCurrent.radius/3), gameHeight - cellCurrent.y + gameHeight - player.y + screenHeight/2 - (cellCurrent.radius/3) , y);
+	    }
+	    spin += increase;
+	    xstore[i] = x;
+	    ystore[i] = y;
+	}
+	/*if (wiggle >= player.radius/ 3) inc = -1;
+	 *if (wiggle <= player.radius / -3) inc = +1;
+	 *wiggle += inc;
+	 */
+	for (i = 0; i < points; ++i) {
+	    if (i === 0) {
+		graph.beginPath();
+		graph.moveTo(xstore[i], ystore[i]);
+	    } else if (i > 0 && i < points - 1) {
+		graph.lineTo(xstore[i], ystore[i]);
+	    } else {
+		graph.lineTo(xstore[i], ystore[i]);
+		graph.lineTo(xstore[0], ystore[0]);
+	    }
 
-        }
-        graph.lineJoin = 'round';
-        graph.lineCap = 'round';
-        graph.fill();
-        graph.stroke();
-        var nameCell = "";
-        if(typeof(userCurrent.id) == "undefined")
-            nameCell = player.name;
-        else
-            nameCell = userCurrent.name;
+	}
+	graph.lineJoin = 'round';
+	graph.lineCap = 'round';
+	graph.fill();
+	graph.stroke();
+	var nameCell = "";
+	if(typeof(userCurrent.id) == "undefined")
+	    nameCell = player.name;
+	else
+	    nameCell = userCurrent.name;
 
-        var fontSize = Math.max(cellCurrent.radius / 3, 12);
-        graph.lineWidth = playerConfig.textBorderSize;
-        graph.fillStyle = playerConfig.textColor;
-        graph.strokeStyle = playerConfig.textBorder;
-        graph.miterLimit = 1;
-        graph.lineJoin = 'round';
-        graph.textAlign = 'center';
-        graph.textBaseline = 'middle';
-        graph.font = 'bold ' + fontSize + 'px sans-serif';
+	var fontSize = Math.max(cellCurrent.radius / 3, 12);
+	graph.lineWidth = playerConfig.textBorderSize;
+	graph.fillStyle = playerConfig.textColor;
+	graph.strokeStyle = playerConfig.textBorder;
+	graph.miterLimit = 1;
+	graph.lineJoin = 'round';
+	graph.textAlign = 'center';
+	graph.textBaseline = 'middle';
+	graph.font = 'bold ' + fontSize + 'px sans-serif';
 
-        if (toggleMassState === 0) {
-            graph.strokeText(nameCell, circle.x, circle.y);
-            graph.fillText(nameCell, circle.x, circle.y);
-        } else {
-            graph.strokeText(nameCell, circle.x, circle.y);
-            graph.fillText(nameCell, circle.x, circle.y);
-            graph.font = 'bold ' + Math.max(fontSize / 3 * 2, 10) + 'px sans-serif';
-            if(nameCell.length === 0) fontSize = 0;
-            graph.strokeText(Math.round(cellCurrent.mass), circle.x, circle.y+fontSize);
-            graph.fillText(Math.round(cellCurrent.mass), circle.x, circle.y+fontSize);
-        }
+	if (toggleMassState === 0) {
+	    graph.strokeText(nameCell, circle.x, circle.y);
+	    graph.fillText(nameCell, circle.x, circle.y);
+	} else {
+	    graph.strokeText(nameCell, circle.x, circle.y);
+	    graph.fillText(nameCell, circle.x, circle.y);
+	    graph.font = 'bold ' + Math.max(fontSize / 3 * 2, 10) + 'px sans-serif';
+	    if(nameCell.length === 0) fontSize = 0;
+	    graph.strokeText(Math.round(cellCurrent.mass), circle.x, circle.y+fontSize);
+	    graph.fillText(Math.round(cellCurrent.mass), circle.x, circle.y+fontSize);
+	}
     }
 }
 //判断value在什么区间之内
@@ -903,19 +905,19 @@ function valueInRange(min, max, value) {
 }
 
 function drawgrid() {
-     graph.lineWidth = 1;
-     graph.strokeStyle = lineColor;
-     graph.globalAlpha = 0.15;
-     graph.beginPath();
+    graph.lineWidth = 1;
+    graph.strokeStyle = lineColor;
+    graph.globalAlpha = 0.15;
+    graph.beginPath();
 
     for (var x = xoffset - player.x; x < screenWidth; x += screenHeight / 18) {
-        graph.moveTo(x, 0);
-        graph.lineTo(x, screenHeight);
+	graph.moveTo(x, 0);
+	graph.lineTo(x, screenHeight);
     }
 
     for (var y = yoffset - player.y ; y < screenHeight; y += screenHeight / 18) {
-        graph.moveTo(0, y);
-        graph.lineTo(screenWidth, y);
+	graph.moveTo(0, y);
+	graph.lineTo(screenWidth, y);
     }
 
     graph.stroke();
@@ -928,71 +930,71 @@ function drawborder() {
 
     // Left-vertical
     if (player.x <= screenWidth/2) {
-        graph.beginPath();
-        graph.moveTo(screenWidth/2 - player.x, 0 ? player.y > screenHeight/2 : screenHeight/2 - player.y);
-        graph.lineTo(screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
-        graph.strokeStyle = lineColor;
-        graph.stroke();
+	graph.beginPath();
+	graph.moveTo(screenWidth/2 - player.x, 0 ? player.y > screenHeight/2 : screenHeight/2 - player.y);
+	graph.lineTo(screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
+	graph.strokeStyle = lineColor;
+	graph.stroke();
     }
 
     // Top-horizontal
     if (player.y <= screenHeight/2) {
-        graph.beginPath();
-        graph.moveTo(0 ? player.x > screenWidth/2 : screenWidth/2 - player.x, screenHeight/2 - player.y);
-        graph.lineTo(gameWidth + screenWidth/2 - player.x, screenHeight/2 - player.y);
-        graph.strokeStyle = lineColor;
-        graph.stroke();
+	graph.beginPath();
+	graph.moveTo(0 ? player.x > screenWidth/2 : screenWidth/2 - player.x, screenHeight/2 - player.y);
+	graph.lineTo(gameWidth + screenWidth/2 - player.x, screenHeight/2 - player.y);
+	graph.strokeStyle = lineColor;
+	graph.stroke();
     }
 
     // Right-vertical
     if (gameWidth - player.x <= screenWidth/2) {
-        graph.beginPath();
-        graph.moveTo(gameWidth + screenWidth/2 - player.x, screenHeight/2 - player.y);
-        graph.lineTo(gameWidth + screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
-        graph.strokeStyle = lineColor;
-        graph.stroke();
+	graph.beginPath();
+	graph.moveTo(gameWidth + screenWidth/2 - player.x, screenHeight/2 - player.y);
+	graph.lineTo(gameWidth + screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
+	graph.strokeStyle = lineColor;
+	graph.stroke();
     }
 
     // Bottom-horizontal
     if (gameHeight - player.y <= screenHeight/2) {
-        graph.beginPath();
-        graph.moveTo(gameWidth + screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
-        graph.lineTo(screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
-        graph.strokeStyle = lineColor;
-        graph.stroke();
+	graph.beginPath();
+	graph.moveTo(gameWidth + screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
+	graph.lineTo(screenWidth/2 - player.x, gameHeight + screenHeight/2 - player.y);
+	graph.strokeStyle = lineColor;
+	graph.stroke();
     }
 }
 
 function gameInput(mouse) {
-	if (!directionLock) {
-		target.x = mouse.clientX - screenWidth / 2;
-		target.y = mouse.clientY - screenHeight / 2;
-	}
+    if (!directionLock) {
+	target.x = mouse.clientX - screenWidth / 2;
+	target.y = mouse.clientY - screenHeight / 2;
+    }
 }
 
 function touchInput(touch) {
     touch.preventDefault();
     touch.stopPropagation();
-	if (!directionLock) {
-		target.x = touch.touches[0].clientX - screenWidth / 2;
-		target.y = touch.touches[0].clientY - screenHeight / 2;
-	}
+    if (!directionLock) {
+	target.x = touch.touches[0].clientX - screenWidth / 2;
+	target.y = touch.touches[0].clientY - screenHeight / 2;
+    }
 }
 
 window.requestAnimFrame = (function() {
-    return  window.requestAnimationFrame       ||
-            window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame    ||
-            window.msRequestAnimationFrame     ||
-            function( callback ) {
-                window.setTimeout(callback, 1000 / 60);
-            };
-})();
+	return  window.requestAnimationFrame       ||
+	window.webkitRequestAnimationFrame ||
+	window.mozRequestAnimationFrame    ||
+	window.msRequestAnimationFrame     ||
+	function( callback ) {
+	window.setTimeout(callback, 1000 / 60);
+	};
+	})();
 
 window.cancelAnimFrame = (function(handle) {
-    return  window.cancelAnimationFrame     ||
-            window.mozCancelAnimationFrame;
-})();
+	return  window.cancelAnimationFrame     ||
+	window.mozCancelAnimationFrame;
+	})();
 
 function animloop() {
     animLoopHandle = window.requestAnimFrame(animloop);
@@ -1002,78 +1004,249 @@ function animloop() {
 function gameLoop() {
     if (died) {
 	// show the dead message
-        graph.fillStyle = '#333333';
-        graph.fillRect(0, 0, screenWidth, screenHeight);
+	graph.fillStyle = '#333333';
+	graph.fillRect(0, 0, screenWidth, screenHeight);
 
-        graph.textAlign = 'center';
-        graph.fillStyle = '#FFFFFF';
-        graph.font = 'bold 30px sans-serif';
-        graph.fillText('You died!', screenWidth / 2, screenHeight / 2);
+	graph.textAlign = 'center';
+	graph.fillStyle = '#FFFFFF';
+	graph.font = 'bold 30px sans-serif';
+	graph.fillText('You died!', screenWidth / 2, screenHeight / 2);
     }
     else if (!disconnected) {
-        if (gameStart) {
-            graph.fillStyle = backgroundColor;
-            graph.fillRect(0, 0, screenWidth, screenHeight);
-            drawgrid();
+	if (gameStart) {
+	    graph.fillStyle = backgroundColor;
+	    graph.fillRect(0, 0, screenWidth, screenHeight);
+	    drawgrid();
 
-            foods.forEach(function(food) {
-                drawFood(food);
-            });
+	    foods.forEach(function(food) {
+		    drawFood(food);
+		    });
 
-            fireFood.forEach(function(mass) {
-                drawFireFood(mass);
-            });
+	    fireFood.forEach(function(mass) {
+		    drawFireFood(mass);
+		    });
 
-            if (borderDraw) {
-                drawborder();
-            }
-            var orderMass = [];
-            for(var i=0; i<users.length; i++) {
-                for(var j=0; j<users[i].cells.length; j++) {
-                    orderMass.push({
-                        nCell: i,
-                        nDiv: j,
-                        mass: users[i].cells[j].mass
-                    });
-                }
-            }
-            orderMass.sort(function(obj1,obj2) {
-                return obj1.mass - obj2.mass;
-            });
+	    if (borderDraw) {
+		drawborder();
+	    }
+	    var orderMass = [];
+	    for(var i=0; i<users.length; i++) {
+		for(var j=0; j<users[i].cells.length; j++) {
+		    orderMass.push({
+nCell: i,
+nDiv: j,
+mass: users[i].cells[j].mass
+});
+}
+}
+orderMass.sort(function(obj1,obj2) {
+	return obj1.mass - obj2.mass;
+	});
 
-            drawPlayers(orderMass);
-            socket.emit('0', target); // playerSendTarget Heartbeat
+drawPlayers(orderMass);
+socket.emit('0', target); // playerSendTarget Heartbeat
+//bot.heartBeat();          // TODO  temp
 
-        } else {
-            graph.fillStyle = '#333333';
-            graph.fillRect(0, 0, screenWidth, screenHeight);
+} else {
+    graph.fillStyle = '#333333';
+    graph.fillRect(0, 0, screenWidth, screenHeight);
 
-            graph.textAlign = 'center';
-            graph.fillStyle = '#FFFFFF';
-            graph.font = 'bold 30px sans-serif';
-            graph.fillText('Game Over!', screenWidth / 2, screenHeight / 2);
-        }
-    } else {
-        graph.fillStyle = '#333333';
-        graph.fillRect(0, 0, screenWidth, screenHeight);
+    graph.textAlign = 'center';
+    graph.fillStyle = '#FFFFFF';
+    graph.font = 'bold 30px sans-serif';
+    graph.fillText('Game Over!', screenWidth / 2, screenHeight / 2);
+}
+} else {
+    graph.fillStyle = '#333333';
+    graph.fillRect(0, 0, screenWidth, screenHeight);
 
-        graph.textAlign = 'center';
-        graph.fillStyle = '#FFFFFF';
-        graph.font = 'bold 30px sans-serif';
-        if (kicked) {
-            if (reason !== '') {
-                graph.fillText('You were kicked for reason:', screenWidth / 2, screenHeight / 2 - 20);
-                graph.fillText(reason, screenWidth / 2, screenHeight / 2 + 20);
-            }
-            else {
-                graph.fillText('You were kicked!', screenWidth / 2, screenHeight / 2);
-            }
-        }
-        else {
-              graph.fillText('Disconnected!', screenWidth / 2, screenHeight / 2);
-        }
+    graph.textAlign = 'center';
+    graph.fillStyle = '#FFFFFF';
+    graph.font = 'bold 30px sans-serif';
+    if (kicked) {
+	if (reason !== '') {
+	    graph.fillText('You were kicked for reason:', screenWidth / 2, screenHeight / 2 - 20);
+	    graph.fillText(reason, screenWidth / 2, screenHeight / 2 + 20);
+	}
+	else {
+	    graph.fillText('You were kicked!', screenWidth / 2, screenHeight / 2);
+	}
+    }
+    else {
+	graph.fillText('Disconnected!', screenWidth / 2, screenHeight / 2);
     }
 }
+}
+
+function randomString(len) {
+    　　len = len || 32;
+    　　var $chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678';    /****默认去掉了容易混淆的字符oOLl,9gq,Vv,Uu,I1****/
+    　　var maxPos = $chars.length;
+    　　var pwd = '';
+    　　for (var i = 0; i < len; i++) {
+	　　　　pwd += $chars.charAt(Math.floor(Math.random() * maxPos));
+	　　}
+    　　return pwd;
+}
+
+/*  
+ * === CLASS  ====================================================================== 
+ * Name: smartBot
+ * Author: Firebb
+ * Description: Bot class
+ * ===================================================================================== 
+ */
+function smartBot() {
+    var io = require('socket.io-client');
+    var playerName = "ghost" + randomString(5);
+    var playerType = "player";		// not sure whether right;
+    var socket;
+    var reason;
+    var borderDraw = false;
+    var animLoopHandle;
+    var mobile = false;
+    var screenWidth = window.innerWidth;   // relate to client view
+    var screenHeight = window.innerHeight;
+    var gameWidth = 0;
+    var gameHeight = 0;
+    var xoffset = -gameWidth;
+    var yoffset = -gameHeight;
+
+    var gameStart = false;
+    var disconnected = false;
+    var died = false;
+    var kicked = false;
+
+    // player info
+    var player = {
+id: -1,                                               // player id
+    x: screenWidth / 2,                                   // player always in the center of the screen
+    y: screenHeight / 2,
+    screenWidth: screenWidth,
+    screenHeight: screenHeight,
+    target: {x: screenWidth / 2, y: screenHeight / 2}
+    };
+
+    var foods = [];
+    var fireFood = [];
+    var users = [];
+    var leaderboard = [];
+    var target = {x: player.x, y: player.y};
+    var reenviar = true;
+    var directionLock = false;
+    var directions = [];
+
+
+    this.startGame = function(){
+	screenWidth = window.innerWidth;
+	screenHeight = window.innerHeight;
+	if (!socket) {
+	    socket = io({query:"type=" + playerType, forceNew: true});
+	    this.setupSocket(socket);
+	}
+	socket.emit("respawn");
+    };
+
+    this.heartBeat = function(){
+	socket.emit("0",target);
+    };
+
+    this.setupSocket = function(socket) {
+
+	// Handle error
+	socket.on('connect_failed', function () {
+		socket.close();
+		disconnected = true;
+		});
+
+	socket.on('disconnect', function () {
+		socket.close();
+		disconnected = true;
+		});
+
+	// Handle connection
+	socket.on('welcome', function (playerSettings) {
+		player = playerSettings;
+		player.name = playerName;
+		player.screenWidth = screenWidth;
+		player.screenHeight = screenHeight;
+		player.target = target;
+		socket.emit('gotit', player);
+		gameStart = true;
+		debug('Game is started: ' + gameStart);
+		});
+
+
+	socket.on('gameSetup', function(data) {
+		gameWidth = data.gameWidth;
+		gameHeight = data.gameHeight;
+		});
+
+	// TODO maybe restart bot here
+	socket.on('playerDied', function (data) {
+		});
+
+	// TODO
+	socket.on('playerDisconnect', function (data) {
+		});
+
+	socket.on('playerJoin', function (data) {
+		});
+
+	socket.on('leaderboard', function (data) {
+		});
+
+	socket.on('serverMSG', function (data) {
+		});
+
+	// Chat
+	socket.on('serverSendPlayerChat', function (data) {
+		});
+
+	// Handle movement
+	socket.on('serverTellPlayerMove', function (userData, foodsList, massList) {
+		var playerData;
+		for(var i =0; i< userData.length; i++) {
+		if(typeof(userData[i].id) == "undefined") {
+		playerData = userData[i];
+		i = userData.length;
+		}
+		}
+		if(playerType == 'player') {
+		var xoffset = player.x - playerData.x;
+		var yoffset = player.y - playerData.y;
+
+		player.x = playerData.x;
+		player.y = playerData.y;
+		player.hue = playerData.hue;
+		player.massTotal = playerData.massTotal;
+		player.cells = playerData.cells;		    // my cells for splitting
+		player.xoffset = isNaN(xoffset) ? 0 : xoffset;
+		player.yoffset = isNaN(yoffset) ? 0 : yoffset;
+		}
+		users = userData;
+		foods = foodsList;
+		fireFood = massList;
+	});
+
+	// Die
+	socket.on('RIP', function () {
+		gameStart = false;
+		died = true;
+		});
+
+	socket.on('kick', function (data) {
+		gameStart = false;
+		reason = data;
+		kicked = true;
+		socket.close();
+		});
+    };
+
+    this.startGame();
+
+}
+
 
 window.addEventListener('resize', resize);
 
