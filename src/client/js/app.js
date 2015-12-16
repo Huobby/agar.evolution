@@ -408,7 +408,7 @@ function directionDown(event) {
 }
 /*  
  * === FUNCTION ====================================================================== 
- * Name: directionDown
+ * Name: directionUp
  * Author: cxy
  * Description: Function called when a key is lifted, will change direction if arrow key
  * ===================================================================================== 
