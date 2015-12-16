@@ -17,6 +17,7 @@ var animLoopHandle;
 var spin = -Math.PI;
 var enemySpin = -Math.PI;
 var mobile = false;
+var needBot = true;
 var bot;
 
 var debug = function(args) {
@@ -52,7 +53,9 @@ function startGame(type) {
     if (!animLoopHandle)
 	animloop();
     socket.emit('respawn');
-    //bot = new smartBot();
+    if (needBot) {
+	bot = new smartBot();
+    }
 }
 
 /*  
@@ -1045,8 +1048,9 @@ orderMass.sort(function(obj1,obj2) {
 
 drawPlayers(orderMass);
 socket.emit('0', target); // playerSendTarget Heartbeat
-//bot.heartBeat();          // TODO  temp
-
+if (needBot) {
+    bot.heartBeat();          // TODO  temp
+{
 } else {
     graph.fillStyle = '#333333';
     graph.fillRect(0, 0, screenWidth, screenHeight);
