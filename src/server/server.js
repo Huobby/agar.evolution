@@ -243,7 +243,7 @@ io.on('connection', function (socket) {
         }
     };
 
-    // 客户端加入pkayer name等信息再返回
+    // 客户端加入player name等信息再返回
     socket.on('gotit', function (player) {
         console.log('Player ' + player.id + ' connecting');
 
@@ -257,6 +257,27 @@ io.on('connection', function (socket) {
             console.log('Player ' + player.id + ' connected!');
             sockets[player.id] = socket;
 
+            var radius = util.massToRadius(c.defaultPlayerMass);
+            var position = c.newPlayerInitialPosition == 'farthest' ? util.uniformPosition(users, radius) : util.randomPosition(radius);
+
+            player.x = position.x;
+            player.y = position.y;
+            player.target.x = 0;
+            player.target.y = 0;
+            if(type === 'player') {
+                player.cells = [{
+                    mass: c.defaultPlayerMass,
+                    x: position.x,
+                    y: position.y,
+                    radius: radius
+                }];
+                player.massTotal = c.defaultPlayerMass;
+            }
+            else {
+                 player.cells = [];
+                 player.massTotal = 0;
+            }
+            player.hue = Math.round(Math.random() * 360);
             currentPlayer = player;
             currentPlayer.lastHeartbeat = new Date().getTime();
             // 将此用户加入用户列表
