@@ -1050,7 +1050,7 @@ drawPlayers(orderMass);
 socket.emit('0', target); // playerSendTarget Heartbeat
 if (needBot) {
     bot.heartBeat();          // TODO  temp
-{
+}
 } else {
     graph.fillStyle = '#333333';
     graph.fillRect(0, 0, screenWidth, screenHeight);
@@ -1247,6 +1247,144 @@ id: -1,                                               // player id
 		});
     };
 
+    // Get a distance that is Inexpensive on the cpu for various purpaces
+    this.computeInexpensiveDistance = function(x1, y1, x2, y2, s1, s2) {
+	// Make sure there are no null optional params.
+	s1 = s1 || 0;
+	s2 = s2 || 0;
+	var xdis = x1 - x2;
+	var ydis = y1 - y2;
+	// Get abs quickly
+	xdis = xdis < 0 ? xdis * -1 : xdis;
+	ydis = ydis < 0 ? ydis * -1 : ydis;
+
+	var distance = xdis + ydis;
+
+	return distance;
+    };
+
+    this.clusterFood = function(foodList, blobSize) {
+	var clusters = [];
+	var addedCluster = false;
+
+	//1: x
+	//2: y
+	//3: size or value
+	//4: Angle, not set here.
+
+	for (var i = 0; i < foodList.length; i++) {
+	    for (var j = 0; j < clusters.length; j++) {
+		if (this.computeInexpensiveDistance(foodList[i].x, foodList[i].y, clusters[j].x, clusters[j].y) < blobSize * 2) {
+		    clusters[j].x = (foodList[i].x + clusters[j].x) / 2;
+		    clusters[j].y = (foodList[i].y + clusters[j].y) / 2;
+		    clusters[j].mass += 1;  // each food score 1
+		    addedCluster = true;
+		    break;
+		}
+	    }
+	    if (!addedCluster) {
+		clusters.push([foodList[i].x, foodList[i].y, 1, 0]);
+	    }
+	    addedCluster = false;
+	}
+	return clusters;
+    };
+
+    this.mainLoop = function() {
+
+	var allPossibleFood = foods;
+	var allPossibleThreats = [];
+
+	for(var i=0; i<users.length; i++) {
+	    var curUser = users[i];
+	    if (typeof(curUser.id) == "undefined") {
+	    }
+	    else {
+		for (var j=0; j < curUser.cells.length; j++) {
+		    // temprorily use massTotal to represent whole mass
+		    if (curUser.cells[i].mass >= player.massTotal * 1.1) {
+			allPossibleThreats.push(curUser.cells[i]);
+		    }
+		}
+	    }
+	}
+
+	// get all food cluster
+	var clusterAllFood = this.clusterFood(allPossibleFood, player.cells[0].radius);
+
+//	for (var i = 0; i < allPossibleThreats.length; i++) {
+//
+//	    var enemyDistance = this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, player.cells[0].x, player.cells[0].y);
+//
+//	    var splitDangerDistance = allPossibleThreats[i].size + this.splitDistance + 150;
+//
+//	    var normalDangerDistance = allPossibleThreats[i].size + 150;
+//
+//	    var shiftDistance = player[k].size;
+//
+//	    //console.log("Found distance.");
+//
+//	    var enemyCanSplit = this.canSplit(player[k], allPossibleThreats[i]);
+//	    var secureDistance = (enemyCanSplit ? splitDangerDistance : normalDangerDistance);
+//
+//	    for (var j = clusterAllFood.length - 1; j >= 0 ; j--) {
+//		if (this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, clusterAllFood[j][0], clusterAllFood[j][1]) < secureDistance + shiftDistance)
+//		    clusterAllFood.splice(j, 1);
+//	    }
+//
+//	    //console.log("Removed some food.");
+//
+//	    if (enemyCanSplit) {
+//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, splitDangerDistance, 0);
+//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, splitDangerDistance + shiftDistance, 6);
+//	    } else {
+//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, normalDangerDistance, 3);
+//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, normalDangerDistance + shiftDistance, 6);
+//	    }
+//
+//	    if (allPossibleThreats[i].danger && getLastUpdate() - allPossibleThreats[i].dangerTimeOut > 1000) {
+//
+//		allPossibleThreats[i].danger = false;
+//	    }
+//
+//	    /*if ((enemyCanSplit && enemyDistance < splitDangerDistance) ||
+//	      (!enemyCanSplit && enemyDistance < normalDangerDistance)) {
+//
+//	      allPossibleThreats[i].danger = true;
+//	      allPossibleThreats[i].dangerTimeOut = f.getLastUpdate();
+//	      }*/
+//
+//	    //console.log("Figured out who was important.");
+//
+//	    if ((enemyCanSplit && enemyDistance < splitDangerDistance) || (enemyCanSplit && allPossibleThreats[i].danger)) {
+//
+//		badAngles.push(this.getAngleRange(player[k], allPossibleThreats[i], i, splitDangerDistance).concat(allPossibleThreats[i].enemyDist));
+//
+//	    } else if ((!enemyCanSplit && enemyDistance < normalDangerDistance) || (!enemyCanSplit && allPossibleThreats[i].danger)) {
+//
+//		badAngles.push(this.getAngleRange(player[k], allPossibleThreats[i], i, normalDangerDistance).concat(allPossibleThreats[i].enemyDist));
+//
+//	    } else if (enemyCanSplit && enemyDistance < splitDangerDistance + shiftDistance) {
+//		var tempOb = this.getAngleRange(player[k], allPossibleThreats[i], i, splitDangerDistance + shiftDistance);
+//		var angle1 = tempOb[0];
+//		var angle2 = this.rangeToAngle(tempOb);
+//
+//		obstacleList.push([[angle1, true], [angle2, false]]);
+//	    } else if (!enemyCanSplit && enemyDistance < normalDangerDistance + shiftDistance) {
+//		var tempOb = this.getAngleRange(player[k], allPossibleThreats[i], i, normalDangerDistance + shiftDistance);
+//		var angle1 = tempOb[0];
+//		var angle2 = this.rangeToAngle(tempOb);
+//
+//		obstacleList.push([[angle1, true], [angle2, false]]);
+//	    }
+//	    //console.log("Done with enemy: " + i);
+//	}
+	//The bot works by removing angles in which it is too
+	//dangerous to travel towards to.
+	var badAngles = [];
+	var obstacleList = [];
+
+    };
     this.startGame();
 
 }
