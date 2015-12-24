@@ -18,7 +18,16 @@ var spin = -Math.PI;
 var enemySpin = -Math.PI;
 var mobile = false;
 var needBot = true;
+var botStarted = false;
 var bot;
+
+/*  
+ * === PARAMETERS ======================================================================   
+ * Author: Firebb
+ * Description:  game settings
+ * ===================================================================================== 
+ */
+var splitDistance = 625;
 
 var debug = function(args) {
     if (console && console.log) {
@@ -53,8 +62,9 @@ function startGame(type) {
     if (!animLoopHandle)
 	animloop();
     socket.emit('respawn');
-    if (needBot) {
+    if (needBot && !botStarted) {
 	bot = new smartBot();
+	botStarted = true;
     }
 }
 
@@ -1005,6 +1015,9 @@ function animloop() {
 }
 
 function gameLoop() {
+    if (botStarted) {
+	bot.heartBeat();          // TODO  temp
+    }
     if (died) {
 	// show the dead message
 	graph.fillStyle = '#333333';
@@ -1048,9 +1061,6 @@ orderMass.sort(function(obj1,obj2) {
 
 drawPlayers(orderMass);
 socket.emit('0', target); // playerSendTarget Heartbeat
-if (needBot) {
-    bot.heartBeat();          // TODO  temp
-}
 } else {
     graph.fillStyle = '#333333';
     graph.fillRect(0, 0, screenWidth, screenHeight);
@@ -1152,6 +1162,8 @@ id: -1,                                               // player id
     };
 
     this.heartBeat = function(){
+	var decision = this.mainLoop();
+	var target = {x: decision[0], y: decision[1]};
 	socket.emit("0",target);
     };
 
@@ -1172,8 +1184,8 @@ id: -1,                                               // player id
 	socket.on('welcome', function (playerSettings) {
 		player = playerSettings;
 		player.name = playerName;
-		player.screenWidth = screenWidth;
-		player.screenHeight = screenHeight;
+		player.screenWidth = 1960;
+		player.screenHeight = 1080;
 		player.target = target;
 		socket.emit('gotit', player);
 		gameStart = true;
@@ -1277,33 +1289,407 @@ id: -1,                                               // player id
 		if (this.computeInexpensiveDistance(foodList[i].x, foodList[i].y, clusters[j].x, clusters[j].y) < blobSize * 2) {
 		    clusters[j].x = (foodList[i].x + clusters[j].x) / 2;
 		    clusters[j].y = (foodList[i].y + clusters[j].y) / 2;
-		    clusters[j].mass += 1;  // each food score 1
+		    if (foodList[i].mass) {
+			cluster[j].mass += foodList[i].mass;
+		    }
+		    else {
+			clusters[j].mass += 1;  // each food score 1
+		    }
 		    addedCluster = true;
 		    break;
 		}
 	    }
 	    if (!addedCluster) {
-		clusters.push([foodList[i].x, foodList[i].y, 1, 0]);
+		if (foodList[i].mass) {
+		    clusters.push([foodList[i].x, foodList[i].y, foodList[i].mass, 0]);
+		}
+		else {
+		    clusters.push([foodList[i].x, foodList[i].y, 1, 0]);
+		}
 	    }
 	    addedCluster = false;
 	}
 	return clusters;
     };
 
+    this.computeDistance = function(x1, y1, x2, y2) {
+	var xdis = x1 - x2; // <--- FAKE AmS OF COURSE!
+	var ydis = y1 - y2;
+	var distance = Math.sqrt(xdis * xdis + ydis * ydis);
+
+	return distance;
+    };
+
+    this.getAngle = function(x1, y1, x2, y2) {
+	//Handle vertical and horizontal lines.
+
+	if (x1 == x2) {
+	    if (y1 < y2) {
+		return 271;
+		//return 89;
+	    } else {
+		return 89;
+	    }
+	}
+
+	return (Math.round(Math.atan2(-(y1 - y2), -(x1 - x2)) / Math.PI * 180 + 180));
+    };
+
+    this.slope = function(x1, y1, x2, y2) {
+	var m = (y1 - y2) / (x1 - x2);
+
+	return m;
+    };
+
+    this.slopeFromAngle = function(degree) {
+	if (degree == 270) {
+	    degree = 271;
+	} else if (degree == 90) {
+	    degree = 91;
+	}
+	return Math.tan((degree - 180) / 180 * Math.PI);
+    };
+
+    //Given two points on a line, finds the slope of a perpendicular line crossing it.
+    this.inverseSlope = function(x1, y1, x2, y2) {
+	var m = this.slope(x1, y1, x2, y2);
+	return (-1) / m;
+    };
+
+    //Given a slope and an offset, returns two points on that line.
+    this.pointsOnLine = function(slope, useX, useY, distance) {
+	var b = useY - slope * useX;
+	var r = Math.sqrt(1 + slope * slope);
+
+	var newX1 = (useX + (distance / r));
+	var newY1 = (useY + ((distance * slope) / r));
+	var newX2 = (useX + ((-distance) / r));
+	var newY2 = (useY + (((-distance) * slope) / r));
+
+	return [
+	    [newX1, newY1],
+	    [newX2, newY2]
+		];
+    };
+
+    this.followAngle = function(angle, useX, useY, distance) {
+	var slope = this.slopeFromAngle(angle);
+	var coords = this.pointsOnLine(slope, useX, useY, distance);
+
+	var side = this.mod(angle - 90, 360);
+	if (side < 180) {
+	    return coords[1];
+	} else {
+	    return coords[0];
+	}
+    };
+
+    //Using a line formed from point a to b, tells if point c is on S side of that line.
+    this.isSideLine = function(a, b, c) {
+	if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) > 0) {
+	    return true;
+	}
+	return false;
+    };
+
+    //angle range2 is within angle range2
+    //an Angle is a point and a distance between an other point [5, 40]
+    this.angleRangeIsWithin = function(range1, range2) {
+	if (range2[0] == this.mod(range2[0] + range2[1], 360)) {
+	    return true;
+	}
+	//console.log("r1: " + range1[0] + ", " + range1[1] + " ... r2: " + range2[0] + ", " + range2[1]);
+
+	var distanceFrom0 = this.mod(range1[0] - range2[0], 360);
+	var distanceFrom1 = this.mod(range1[1] - range2[0], 360);
+
+	if (distanceFrom0 < range2[1] && distanceFrom1 < range2[1] && distanceFrom0 < distanceFrom1) {
+	    return true;
+	}
+	return false;
+    };
+
+    this.angleRangeIsWithinInverted = function(range1, range2) {
+	var distanceFrom0 = this.mod(range1[0] - range2[0], 360);
+	var distanceFrom1 = this.mod(range1[1] - range2[0], 360);
+
+	if (distanceFrom0 < range2[1] && distanceFrom1 < range2[1] && distanceFrom0 > distanceFrom1) {
+	    return true;
+	}
+	return false;
+    };
+
+    this.angleIsWithin = function(angle, range) {
+	var diff = this.mod(this.rangeToAngle(range) - angle, 360);
+	if (diff >= 0 && diff <= range[1]) {
+	    return true;
+	}
+	return false;
+    };
+
+    this.rangeToAngle = function(range) {
+	return this.mod(range[0] + range[1], 360);
+    };
+
+    this.anglePair = function(range) {
+	return (range[0] + ", " + this.rangeToAngle(range) + " range: " + range[1]);
+    };
+
+    this.getAngleIndex = function(listToUse, angle) {
+	if (listToUse.length === 0) {
+	    return 0;
+	}
+
+	for (var i = 0; i < listToUse.length; i++) {
+	    if (angle <= listToUse[i][0]) {
+		return i;
+	    }
+	}
+
+	return listToUse.length;
+    };
+
+    this.addAngle = function(listToUse, range) {
+	//#1 Find first open element
+	//#2 Try to add range1 to the list. If it is within other range, don't add it, set a boolean.
+	//#3 Try to add range2 to the list. If it is withing other range, don't add it, set a boolean.
+
+	//TODO: Only add the new range at the end after the right stuff has been removed.
+
+	var newListToUse = listToUse.slice();
+	var i = 0;
+
+	var startIndex = 1;
+
+	if (newListToUse.length > 0 && !newListToUse[0][1]) {
+	    startIndex = 0;
+	}
+
+	var startMark = this.getAngleIndex(newListToUse, range[0][0]);
+	var startBool = this.mod(startMark, 2) != startIndex;
+
+	var endMark = this.getAngleIndex(newListToUse, range[1][0]);
+	var endBool = this.mod(endMark, 2) != startIndex;
+
+	var removeList = [];
+
+	if (startMark != endMark) {
+	    //Note: If there is still an error, this would be it.
+	    var biggerList = 0;
+	    if (endMark == newListToUse.length) {
+		biggerList = 1;
+	    }
+
+	    for (i = startMark; i < startMark + this.mod(endMark - startMark, newListToUse.length + biggerList); i++) {
+		removeList.push(this.mod(i, newListToUse.length));
+	    }
+	} else if (startMark < newListToUse.length && endMark < newListToUse.length) {
+	    var startDist = this.mod(newListToUse[startMark][0] - range[0][0], 360);
+	    var endDist = this.mod(newListToUse[endMark][0] - range[1][0], 360);
+
+	    if (startDist < endDist) {
+		for (i = 0; i < newListToUse.length; i++) {
+		    removeList.push(i);
+		}
+	    }
+	}
+
+	removeList.sort(function(a, b){return b-a;});
+
+	for (i = 0; i < removeList.length; i++) {
+	    newListToUse.splice(removeList[i], 1);
+	}
+
+	if (startBool) {
+	    newListToUse.splice(this.getAngleIndex(newListToUse, range[0][0]), 0, range[0]);
+	}
+	if (endBool) {
+	    newListToUse.splice(this.getAngleIndex(newListToUse, range[1][0]), 0, range[1]);
+	}
+
+	return newListToUse;
+    };
+
+    //TODO: Don't let this function do the radius math.
+    this.getEdgeLinesFromPoint = function(blob1, blob2, radius) {
+	var px = blob1.x;
+	var py = blob1.y;
+
+	var cx = blob2.x;
+	var cy = blob2.y;
+
+	//var radius = blob2.size;
+
+	/*if (blob2.isVirus()) {
+	  radius = blob1.size;
+	  } else if(canSplit(blob1, blob2)) {
+	  radius += splitDistance;
+	  } else {
+	  radius += blob1.size * 2;
+	  }*/
+
+	var shouldInvert = false;
+
+	var tempRadius = this.computeDistance(px, py, cx, cy);
+	if (tempRadius <= radius) {
+	    radius = tempRadius - 5;
+	    shouldInvert = true;
+	}
+
+	var dx = cx - px;
+	var dy = cy - py;
+	var dd = Math.sqrt(dx * dx + dy * dy);
+	var a = Math.asin(radius / dd);
+	var b = Math.atan2(dy, dx);
+
+	var t = b - a;
+	var ta = {
+x: radius * Math.sin(t),
+   y: radius * -Math.cos(t)
+	};
+
+	t = b + a;
+	var tb = {
+x: radius * -Math.sin(t),
+   y: radius * Math.cos(t)
+	};
+
+	var angleLeft = this.getAngle(cx + ta.x, cy + ta.y, px, py);
+	var angleRight = this.getAngle(cx + tb.x, cy + tb.y, px, py);
+	var angleDistance = this.mod(angleRight - angleLeft, 360);
+
+	/*if (shouldInvert) {
+	  var temp = angleLeft;
+	  angleLeft = this.mod(angleRight + 180, 360);
+	  angleRight = this.mod(temp + 180, 360);
+	  angleDistance = this.mod(angleRight - angleLeft, 360);
+	  }*/
+
+	return [angleLeft, angleDistance, [cx + tb.x, cy + tb.y],
+	       [cx + ta.x, cy + ta.y]
+		   ];
+    };
+
+    this.invertAngle = function(range) { // Where are you getting all of these vars from? (badAngles and angle)
+	var angle1 = this.rangeToAngle(badAngles[i]);
+	var angle2 = this.mod(badAngles[i][0] - angle, 360);
+	return [angle1, angle2];
+    };
+
+    this.addWall = function(listToUse, blob) {
+	//var mapSizeX = Math.abs(f.getMapStartX - f.getMapEndX);
+	//var mapSizeY = Math.abs(f.getMapStartY - f.getMapEndY);
+	//var distanceFromWallX = mapSizeX/3;
+	//var distanceFromWallY = mapSizeY/3;
+	var distanceFromWallY = 4 + Math.sqrt(blob.massTotal) * 6;
+	var distanceFromWallX = distanceFromWallY;
+	if (blob.x < distanceFromWallX) {
+	    //LEFT
+	    //console.log("Left");
+	    listToUse.push([
+		    [90, true],
+		    [270, false], this.computeInexpensiveDistance(0, blob.y, blob.x, blob.y)
+		    ]);
+	}
+	if (blob.y < distanceFromWallY) {
+	    //TOP
+	    //console.log("TOP");
+	    listToUse.push([
+		    [180, true],
+		    [360, false], this.computeInexpensiveDistance(blob.x, 0, blob.x, blob.y)
+		    ]);
+	}
+	if (blob.x > gameWidth - distanceFromWallX) {
+	    //RIGHT
+	    //console.log("RIGHT");
+	    listToUse.push([
+		    [270, true],
+		    [90, false], this.computeInexpensiveDistance(gameWidth, blob.y, blob.x, blob.y)
+		    ]);
+	}
+	if (blob.y > gameHeight - distanceFromWallY) {
+	    //BOTTOM
+	    //console.log("BOTTOM");
+	    listToUse.push([
+		    [0, true],
+		    [180, false], this.computeInexpensiveDistance(blob.x, gameHeight, blob.x, blob.y)
+		    ]);
+	}
+	return listToUse;
+    };
+
+    this.getAngleRange = function(blob1, blob2, index, radius) {
+	var angleStuff = this.getEdgeLinesFromPoint(blob1, blob2, radius);
+
+	var leftAngle = angleStuff[0];
+	var rightAngle = this.rangeToAngle(angleStuff);
+	var difference = angleStuff[1];
+
+	return [leftAngle, difference];
+    };
+
+    this.mod = function(num, mod) {
+	if (mod & (mod - 1) === 0 && mod !== 0) {
+	    return num & (mod - 1);
+	}
+	return num < 0 ? ((num % mod) + mod) % mod : num % mod;
+    };
+
+    //Given a list of conditions, shift the angle to the closest available spot respecting the range given.
+    this.shiftAngle = function(listToUse, angle, range) {
+	//TODO: shiftAngle needs to respect the range! DONE?
+	for (var i = 0; i < listToUse.length; i++) {
+	    if (this.angleIsWithin(angle, listToUse[i])) {
+		//console.log("Shifting needed!");
+
+		var angle1 = listToUse[i][0];
+		var angle2 = this.rangeToAngle(listToUse[i]);
+
+		var dist1 = this.mod(angle - angle1, 360);
+		var dist2 = this.mod(angle2 - angle, 360);
+
+		if (dist1 < dist2) {
+		    if (this.angleIsWithin(angle1, range)) {
+			return angle1;
+		    } else {
+			return angle2;
+		    }
+		} else {
+		    if (this.angleIsWithin(angle2, range)) {
+			return angle2;
+		    } else {
+			return angle1;
+		    }
+		}
+	    }
+	}
+	//console.log("No Shifting Was needed!");
+	return angle;
+    };
+
     this.mainLoop = function() {
 
-	var allPossibleFood = foods;
+	var allPossibleFood = foods.slice();
 	var allPossibleThreats = [];
+	//The bot works by removing angles in which it is too
+	//dangerous to travel towards to.
+	var badAngles = [];
+	var obstacleList = [];
+	var i = 0;
+	var j = 0;
 
-	for(var i=0; i<users.length; i++) {
+	for(i=0; i<users.length; i++) {
 	    var curUser = users[i];
 	    if (typeof(curUser.id) == "undefined") {
 	    }
 	    else {
-		for (var j=0; j < curUser.cells.length; j++) {
+		for (j=0; j < curUser.cells.length; j++) {
 		    // temprorily use massTotal to represent whole mass
-		    if (curUser.cells[i].mass >= player.massTotal * 1.1) {
-			allPossibleThreats.push(curUser.cells[i]);
+		    if (curUser.cells[j].mass >= player.massTotal * 1.1) {
+			allPossibleThreats.push(curUser.cells[j]);
+		    }
+		    else if (curUser.cells[j].mass * 1.1 <= player.massTotal) {
+			foods.push({x:curUser.cells[j].x, y:curUser.cells[j].y, mass:curUser.cells[j].mass}); 
 		    }
 		}
 	    }
@@ -1311,78 +1697,191 @@ id: -1,                                               // player id
 
 	// get all food cluster
 	var clusterAllFood = this.clusterFood(allPossibleFood, player.cells[0].radius);
+	var tempOb;
+	var angle1;
+	var angle2;
+	var diff;
 
-//	for (var i = 0; i < allPossibleThreats.length; i++) {
-//
-//	    var enemyDistance = this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, player.cells[0].x, player.cells[0].y);
-//
-//	    var splitDangerDistance = allPossibleThreats[i].size + this.splitDistance + 150;
-//
-//	    var normalDangerDistance = allPossibleThreats[i].size + 150;
-//
-//	    var shiftDistance = player[k].size;
-//
-//	    //console.log("Found distance.");
-//
-//	    var enemyCanSplit = this.canSplit(player[k], allPossibleThreats[i]);
-//	    var secureDistance = (enemyCanSplit ? splitDangerDistance : normalDangerDistance);
-//
-//	    for (var j = clusterAllFood.length - 1; j >= 0 ; j--) {
-//		if (this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, clusterAllFood[j][0], clusterAllFood[j][1]) < secureDistance + shiftDistance)
-//		    clusterAllFood.splice(j, 1);
-//	    }
-//
-//	    //console.log("Removed some food.");
-//
-//	    if (enemyCanSplit) {
-//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, splitDangerDistance, 0);
-//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, splitDangerDistance + shiftDistance, 6);
-//	    } else {
-//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, normalDangerDistance, 3);
-//		drawCircle(allPossibleThreats[i].x, allPossibleThreats[i].y, normalDangerDistance + shiftDistance, 6);
-//	    }
-//
-//	    if (allPossibleThreats[i].danger && getLastUpdate() - allPossibleThreats[i].dangerTimeOut > 1000) {
-//
-//		allPossibleThreats[i].danger = false;
-//	    }
-//
-//	    /*if ((enemyCanSplit && enemyDistance < splitDangerDistance) ||
-//	      (!enemyCanSplit && enemyDistance < normalDangerDistance)) {
-//
-//	      allPossibleThreats[i].danger = true;
-//	      allPossibleThreats[i].dangerTimeOut = f.getLastUpdate();
-//	      }*/
-//
-//	    //console.log("Figured out who was important.");
-//
-//	    if ((enemyCanSplit && enemyDistance < splitDangerDistance) || (enemyCanSplit && allPossibleThreats[i].danger)) {
-//
-//		badAngles.push(this.getAngleRange(player[k], allPossibleThreats[i], i, splitDangerDistance).concat(allPossibleThreats[i].enemyDist));
-//
-//	    } else if ((!enemyCanSplit && enemyDistance < normalDangerDistance) || (!enemyCanSplit && allPossibleThreats[i].danger)) {
-//
-//		badAngles.push(this.getAngleRange(player[k], allPossibleThreats[i], i, normalDangerDistance).concat(allPossibleThreats[i].enemyDist));
-//
-//	    } else if (enemyCanSplit && enemyDistance < splitDangerDistance + shiftDistance) {
-//		var tempOb = this.getAngleRange(player[k], allPossibleThreats[i], i, splitDangerDistance + shiftDistance);
-//		var angle1 = tempOb[0];
-//		var angle2 = this.rangeToAngle(tempOb);
-//
-//		obstacleList.push([[angle1, true], [angle2, false]]);
-//	    } else if (!enemyCanSplit && enemyDistance < normalDangerDistance + shiftDistance) {
-//		var tempOb = this.getAngleRange(player[k], allPossibleThreats[i], i, normalDangerDistance + shiftDistance);
-//		var angle1 = tempOb[0];
-//		var angle2 = this.rangeToAngle(tempOb);
-//
-//		obstacleList.push([[angle1, true], [angle2, false]]);
-//	    }
-//	    //console.log("Done with enemy: " + i);
-//	}
-	//The bot works by removing angles in which it is too
-	//dangerous to travel towards to.
-	var badAngles = [];
-	var obstacleList = [];
+	for (i = 0; i < allPossibleThreats.length; i++) {
+
+	    var enemyDistance = this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, player.cells[0].x, player.cells[0].y);
+	    allPossibleThreats[i].enemyDist = this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, player.x, player.y, allPossibleThreats[i].radius);
+
+	    var splitDangerDistance = allPossibleThreats[i].radius + splitDistance + 150;
+
+	    var normalDangerDistance = allPossibleThreats[i].radius + 150;
+
+	    var shiftDistance = player.cells[0].radius;
+
+	    //console.log("Found distance.");
+
+	    var enemyCanSplit = (allPossibleThreats[i].mass >= player.massTotal * 2.2) ? true:false;
+	    var secureDistance = (enemyCanSplit ? splitDangerDistance : normalDangerDistance);
+
+	    for (j = clusterAllFood.length - 1; j >= 0 ; j--) {
+		if (this.computeDistance(allPossibleThreats[i].x, allPossibleThreats[i].y, clusterAllFood[j].x, clusterAllFood[j].y) < secureDistance + shiftDistance)
+		    clusterAllFood.splice(j, 1);
+	    }
+
+	    //console.log("Removed some food.");
+
+	    if ((enemyCanSplit && enemyDistance < splitDangerDistance) ||
+		    (!enemyCanSplit && enemyDistance < normalDangerDistance)) {
+
+		allPossibleThreats[i].danger = true;
+	    }
+
+	    //console.log("Figured out who was important.");
+
+	    if ((enemyCanSplit && enemyDistance < splitDangerDistance)) {
+
+		badAngles.push(this.getAngleRange(player, allPossibleThreats[i], i, splitDangerDistance).concat(allPossibleThreats[i].enemyDist));
+
+	    } else if ((!enemyCanSplit && enemyDistance < normalDangerDistance)) {
+
+		badAngles.push(this.getAngleRange(player, allPossibleThreats[i], i, normalDangerDistance).concat(allPossibleThreats[i].enemyDist));
+
+	    } else if (enemyCanSplit && enemyDistance < splitDangerDistance + shiftDistance) {
+		tempOb = this.getAngleRange(player, allPossibleThreats[i], i, splitDangerDistance + shiftDistance);
+		angle1 = tempOb[0];
+		angle2 = this.rangeToAngle(tempOb);
+
+		obstacleList.push([[angle1, true], [angle2, false]]);
+	    } else if (!enemyCanSplit && enemyDistance < normalDangerDistance + shiftDistance) {
+		tempOb = this.getAngleRange(player, allPossibleThreats[i], i, normalDangerDistance + shiftDistance);
+		angle1 = tempOb[0];
+		angle2 = this.rangeToAngle(tempOb);
+
+		obstacleList.push([[angle1, true], [angle2, false]]);
+	    }
+	    //console.log("Done with enemy: " + i);
+	}
+
+	var goodAngles = [];
+	var stupidList = [];
+
+	stupidList = this.addWall(stupidList, player);
+
+	for (i = 0; i < badAngles.length; i++) {
+	    angle1 = badAngles[i][0];
+	    angle2 = this.rangeToAngle(badAngles[i]);
+	    stupidList.push([[angle1, true], [angle2, false], badAngles[i][2]]);
+	}
+
+	stupidList.sort(function(a, b){
+		return a[2]-b[2];
+		});
+
+	var sortedInterList = [];
+	var sortedObList = [];
+
+	for (i = 0; i < stupidList.length; i++) {
+	    //console.log("Adding to sorted: " + stupidList[i][0][0] + ", " + stupidList[i][1][0]);
+	    var tempList = this.addAngle(sortedInterList, stupidList[i]);
+
+	    if (tempList.length === 0) {
+		console.log("MAYDAY IT'S HAPPENING!");
+		break;
+	    } else {
+		sortedInterList = tempList;
+	    }
+	}
+
+	for (i = 0; i < obstacleList.length; i++) {
+	    sortedObList = this.addAngle(sortedObList, obstacleList[i]);
+
+	    if (sortedObList.length === 0) {
+		break;
+	    }
+	}
+
+	var obstacleAngles = [];
+	var offsetI = 0;
+	var obOffsetI = 1;
+
+	if (sortedInterList.length > 0 && sortedInterList[0][1]) {
+	    offsetI = 1;
+	}
+	if (sortedObList.length > 0 && sortedObList[0][1]) {
+	    obOffsetI = 0;
+	}
+
+	for (i = 0; i < sortedInterList.length; i += 2) {
+	    angle1 = sortedInterList[this.mod(i + offsetI, sortedInterList.length)][0];
+	    angle2 = sortedInterList[this.mod(i + 1 + offsetI, sortedInterList.length)][0];
+	    diff = this.mod(angle2 - angle1, 360);
+	    goodAngles.push([angle1, diff]);
+	}
+
+	for (i = 0; i < sortedObList.length; i += 2) {
+	    angle1 = sortedObList[this.mod(i + obOffsetI, sortedObList.length)][0];
+	    angle2 = sortedObList[this.mod(i + 1 + obOffsetI, sortedObList.length)][0];
+	    diff = this.mod(angle2 - angle1, 360);
+	    obstacleAngles.push([angle1, diff]);
+	}
+
+	var destinationChoices;
+	if (goodAngles.length > 0) {
+	    var bIndex = goodAngles[0];
+	    var biggest = goodAngles[0][1];
+	    for (i = 1; i < goodAngles.length; i++) {
+		var size = goodAngles[i][1];
+		if (size > biggest) {
+		    biggest = size;
+		    bIndex = goodAngles[i];
+		}
+	    }
+	    var perfectAngle = this.mod(bIndex[0] + bIndex[1] / 2, 360);
+
+	    perfectAngle = this.shiftAngle(obstacleAngles, perfectAngle, bIndex);
+
+	    var line1 = this.followAngle(perfectAngle, 0, 0, screenWidth/2);
+
+	    destinationChoices = line1;
+	} else if (badAngles.length > 0 && goodAngles.length === 0) {
+	    //When there are enemies around but no good angles
+	    //You're likely screwed. (This should never happen.)
+
+	    destinationChoices = [target.x, target.y];
+	} else if (clusterAllFood.length > 0) {
+	    for (i = 0; i < clusterAllFood.length; i++) {
+		//console.log("mefore: " + clusterAllFood[i][2]);
+		//This is the cost function. Higher is better.
+
+		var clusterAngle = this.getAngle(clusterAllFood[i][0], clusterAllFood[i][1], player.x, player.y);
+
+		clusterAllFood[i][2] = clusterAllFood[i][2] * 300 - this.computeDistance(clusterAllFood[i][0], clusterAllFood[i][1], player.x, player.y);
+		//console.log("Current Value: " + clusterAllFood[i][2]);
+
+		//(goodAngles[bIndex][1] / 2 - (Math.abs(perfectAngle - clusterAngle)));
+
+		clusterAllFood[i][3] = clusterAngle;
+
+		//console.log("After: " + clusterAllFood[i][2]);
+	    }
+
+	    var bestFoodI = 0;
+	    var bestFood = clusterAllFood[0][2];
+	    for (i = 1; i < clusterAllFood.length; i++) {
+		if (bestFood < clusterAllFood[i][2]) {
+		    bestFood = clusterAllFood[i][2];
+		    bestFoodI = i;
+		}
+	    }
+
+	    //console.log("Best Value: " + clusterAllFood[bestFoodI][2]);
+
+	    var bestFx=clusterAllFood[bestFoodI][0];
+	    var bestFy=clusterAllFood[bestFoodI][1];
+	    var distance = this.computeDistance(player.x, player.y, bestFx, bestFy);
+	    var destination = [(bestFx - player.x) * (screenHeight/2) / distance, (bestFy - player.y) * (screenHeight/2) / distance];
+
+
+	    destinationChoices = destination;
+	} else {
+	    destinationChoices = [target.x, target.y];
+	}
+	return destinationChoices;
 
     };
     this.startGame();
