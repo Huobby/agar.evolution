@@ -30,13 +30,13 @@ if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) ) {
     mobile = true;
 }
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: startGame  
+/*
+ * === FUNCTION ======================================================================
+ * Name: startGame
  * Author: Firebb
  * Description:  game entry
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function startGame(type) {
     playerName = playerNameInput.value.replace(/(<([^>]+)>)/ig, '').substring(0,25);
     playerType = type;
@@ -58,26 +58,26 @@ function startGame(type) {
     }
 }
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: validNick 
+/*
+ * === FUNCTION ======================================================================
+ * Name: validNick
  * Author: Firebb
  * Description: check if nick is valid alphanumeric characters (and underscores)
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function validNick() {
     var regex = /^\w*$/;
     debug('Regex Test', regex.exec(playerNameInput.value));
     return regex.exec(playerNameInput.value) !== null;
 }
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: window onload 
+/*
+ * === FUNCTION ======================================================================
+ * Name: window onload
  * Author: Firebb
  * Description: add event to the welcome page button
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 window.onload = function() {
 
     var btn = document.getElementById('startButton'),
@@ -147,9 +147,9 @@ var toggleMassState = 0;
 var backgroundColor = '#f2fbff';
 var lineColor = '#000000';
 
-// 
+//
 var foodConfig = {
-border: 0,          
+border: 0,
 };
 
 //
@@ -182,14 +182,14 @@ var reenviar = true;
 var directionLock = false;
 var directions = [];
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: canvas events 
+/*
+ * === FUNCTION ======================================================================
+ * Name: canvas events
  * Author: Firebb
  * Description: add event to the canvas
  * c for canvas
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 var c = document.getElementById('cvs');
 c.width = screenWidth; c.height = screenHeight;
 c.addEventListener('mousemove', gameInput, false);
@@ -200,13 +200,13 @@ c.addEventListener('keydown', directionDown, false);
 c.addEventListener('touchstart', touchInput, false);
 c.addEventListener('touchmove', touchInput, false);
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: window onload 
+/*
+ * === FUNCTION ======================================================================
+ * Name: window onload
  * Author: Firebb
  * Description: register when the mouse goes off the canvas
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function outOfBounds() {
     if (!continuity) {			// mouse out of canvas, if set continuity in settings keep moving otherwise stop
 	target = { x : 0, y: 0 };
@@ -217,7 +217,7 @@ function outOfBounds() {
 var visibleBorderSetting = document.getElementById('visBord');
 visibleBorderSetting.onchange = toggleBorder;
 
-// show message 
+// show message
 var showMassSetting = document.getElementById('showMass');
 showMassSetting.onchange = toggleMass;
 
@@ -228,27 +228,27 @@ continuitySetting.onchange = toggleContinuity;
 // canvas 2d painter, graph used for further painting
 var graph = c.getContext('2d');
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: ChatClient 
+/*
+ * === FUNCTION ======================================================================
+ * Name: ChatClient
  * Author: Firebb
  * Description: bind component
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function ChatClient(config) {
     this.commands = {};
     var input = document.getElementById('chatInput');
     input.addEventListener('keypress', this.sendChat.bind(this));
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: generate dom object for the message
  * Author: Firebb
- * Description: template into chat box a new message from a player 
+ * Description: template into chat box a new message from a player
  * args(sender's name, sendmessage, if it is me)
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 ChatClient.prototype.addChatLine = function (name, message, me) {
     if (mobile) {
 	return;
@@ -263,14 +263,14 @@ ChatClient.prototype.addChatLine = function (name, message, me) {
 };
 
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: create dom object for system message 
+/*
+ * === FUNCTION ======================================================================
+ * Name: create dom object for system message
  * Author: Firebb
- * Description:  template into chat box a new message from the application 
+ * Description:  template into chat box a new message from the application
  * args(system message)
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 ChatClient.prototype.addSystemLine = function (message) {
     if (mobile) {
 	return;
@@ -285,14 +285,14 @@ ChatClient.prototype.addSystemLine = function (message) {
     this.appendMessage(newline);
 };
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: append the dom object after call addChatLine 
+/*
+ * === FUNCTION ======================================================================
+ * Name: append the dom object after call addChatLine
  * Author: Firebb
  * Description:  templates the message DOM node into the messsage area
  * args(node)
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 ChatClient.prototype.appendMessage = function (node) {
     if (mobile) {
 	return;
@@ -304,13 +304,13 @@ ChatClient.prototype.appendMessage = function (node) {
     chatList.appendChild(node);
 };
 
-/*  
- * === FUNCTION ====================================================================== 
- * Name: append the dom object after call addChatLine 
+/*
+ * === FUNCTION ======================================================================
+ * Name: append the dom object after call addChatLine
  * Author: Firebb
- * Description:  sends a message or executes a command on the ENTER key 
- * ===================================================================================== 
- */ 
+ * Description:  sends a message or executes a command on the ENTER key
+ * =====================================================================================
+ */
 ChatClient.prototype.sendChat = function (key) {
     var commands = this.commands,
 	input = document.getElementById('chatInput');
@@ -342,13 +342,13 @@ ChatClient.prototype.sendChat = function (key) {
     }
 };
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: resgister command
  * Author: Firebb
  * Description:  add a new chat command
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 ChatClient.prototype.registerCommand = function (name, description, callback) {
     this.commands[name] = {
 description: description,
@@ -356,13 +356,13 @@ description: description,
     };
 };
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: print help
  * Author: Firebb
- * Description:  print help of all chat commands available 
- * ===================================================================================== 
- */ 
+ * Description:  print help of all chat commands available
+ * =====================================================================================
+ */
 ChatClient.prototype.printHelp = function () {
     var commands = this.commands;
     for (var cmd in commands) {
@@ -374,13 +374,13 @@ ChatClient.prototype.printHelp = function () {
 
 var chat = new ChatClient();
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: print help
  * Author: Firebb
  * Description:  chat command callback functions
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function keyInput(event) {
     var key = event.which || event.keyCode;
     if(key === KEY_FIREFOOD && reenviar) {
@@ -393,13 +393,13 @@ function keyInput(event) {
     }
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: directionDown
  * Author: cxy
  * Description: Function called when a key is pressed, will change direction if arrow key
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function directionDown(event) {
     var key = event.which || event.keyCode;
 
@@ -411,13 +411,13 @@ function directionDown(event) {
 	}
     }
 }
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: directionUp
  * Author: cxy
  * Description: Function called when a key is lifted, will change direction if arrow key
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function directionUp(event) {
     var key = event.which || event.keyCode;
     if (directional(key)) {
@@ -428,13 +428,13 @@ function directionUp(event) {
 	}
     }
 }
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: newDirection
  * Author: cxy
  * Description: Updates the direciton array including information about the new direction
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function newDirection(direction, list, isAddition) {
     var result = false;
     var found = false;
@@ -458,13 +458,13 @@ function newDirection(direction, list, isAddition) {
     return result;
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: updateTarget
  * Author: cxy
  * Description: Updates the target according to the directions in the directions array
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 
 
 //target就是玩家控制的小球的位置，updateTarget 就是根据direction array里面储存的运动方向改变小球的位置
@@ -487,13 +487,13 @@ function updateTarget(list) {
     target.y += directionVertical;
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: updateTarget
  * Author: cxy
  * Description: Different directions
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 
 function directional(key) {
     return horizontal(key) || vertical(key);
@@ -512,13 +512,13 @@ function checkLatency() {
     socket.emit('ping');
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: toggle ***
  * Author: cxy
  * Description: toggle different modes
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function toggleDarkMode() {
     var LIGHT = '#f2fbff',
 	DARK = '#181818';
@@ -566,13 +566,13 @@ function toggleContinuity(args) {
     }
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Author : Wang Ziyuan
- * Description: Break out many of these game controls into a separate class 
+ * Description: Break out many of these game controls into a separate class
  * Description: ping,dark and so on, some commands that we can use in the chat box
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 chat.registerCommand('ping', 'Check your latency', function () {
 	checkLatency();
 	});
@@ -606,13 +606,13 @@ chat.registerCommand('kick', 'Kick a player', function (args) {
 	});
 
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: setupSocket
  * Author: Wang Ziyuan
  * Description: Socket Stuff Handling
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function setupSocket(socket) {
     // Handle ping
     socket.on('pong', function () {
@@ -747,13 +747,13 @@ function setupSocket(socket) {
 	    });
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: drawCircle
  * Author: Wang Ziyuan
  * Description: Draw your circle according to center and radius
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function drawCircle(centerX, centerY, radius, sides) {
     var theta = 0;
     var x = 0;
@@ -773,13 +773,13 @@ function drawCircle(centerX, centerY, radius, sides) {
     graph.fill();
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: draw ***
  * Author: cxy
  * Description: draw food, firefood, players on the canvas
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function drawFood(food) {
     graph.strokeStyle = 'hsl(' + food.hue + ', 100%, 45%)';
     graph.fillStyle = 'hsl(' + food.hue + ', 100%, 50%)';
@@ -787,12 +787,12 @@ function drawFood(food) {
     drawCircle(food.x - player.x + screenWidth / 2, food.y - player.y + screenHeight / 2, food.radius, food.sides);
 }
 
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: drawCircle
  * Author: Wang Ziyuan
  * Description: Draw the food you fire
- * ===================================================================================== 
+ * =====================================================================================
  */
 function drawFireFood(mass) {
     graph.strokeStyle = 'hsl(' + mass.hue + ', 100%, 45%)';
@@ -800,13 +800,13 @@ function drawFireFood(mass) {
     graph.lineWidth = playerConfig.border+10;
     drawCircle(mass.x - player.x + screenWidth / 2, mass.y - player.y + screenHeight / 2, mass.radius-5, 18 + (~~(mass.masa/5)));
 }
-/*  
- * === FUNCTION ====================================================================== 
+/*
+ * === FUNCTION ======================================================================
  * Name: drawCircle
  * Author: Wang Ziyuan
  * Description: Draw all  palyers
- * ===================================================================================== 
- */ 
+ * =====================================================================================
+ */
 function drawPlayers(order) {
     var start = {
 x: player.x - (screenWidth / 2),
@@ -1093,12 +1093,12 @@ function randomString(len) {
     　　return pwd;
 }
 
-/*  
- * === CLASS  ====================================================================== 
+/*
+ * === CLASS  ======================================================================
  * Name: smartBot
  * Author: Firebb
  * Description: Bot class
- * ===================================================================================== 
+ * =====================================================================================
  */
 function smartBot() {
     var io = require('socket.io-client');
@@ -1386,8 +1386,6 @@ id: -1,                                               // player id
 
     };
     this.startGame();
-    // * Name: smartBot
-
 }
 
 
@@ -1398,4 +1396,3 @@ function resize() {
     player.screenHeight = c.height = screenHeight = playerType == 'player' ? window.innerHeight : gameHeight;
     socket.emit('windowResized', { screenWidth: screenWidth, screenHeight: screenHeight });
 }
-
