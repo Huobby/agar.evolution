@@ -17,7 +17,7 @@ var util = require('./lib/util');
 // Import quadtree
 var quadtree= require('../../quadtree');
 
-var args = {x : 0, y : 0, h : c.gameHeight, w : c.gameWidth, maxChildren : 1, maxDepth : 5};
+var args = {x : 0, y : 0, h : c.gameHeight, w : c.gameWidth, maxChildren : 2, maxDepth : 10};
 console.log(args);
 
 var tree = quadtree.QUAD.init(args);
@@ -94,8 +94,10 @@ function movePlayer(player) {
             player.cells[i].x += deltaX;
         }
         //Find best solution
-        for(var j=0; j<player.cells.length; j++) {
-            if(j != i) {
+        for(var j=i + 1; j<player.cells.length; j++) {
+            if (player.cells[i] === undefined || player.cells[j] === undefined)
+                console.log("undefined occur");
+            //if(j != i) {
                 var distance = Math.sqrt(Math.pow(player.cells[j].y-player.cells[i].y,2) + Math.pow(player.cells[j].x-player.cells[i].x,2));
                 var radiusTotal = (player.cells[i].radius + player.cells[j].radius);
                 if(distance < radiusTotal) {
@@ -115,9 +117,10 @@ function movePlayer(player) {
                         player.cells[i].mass += player.cells[j].mass;
                         player.cells[i].radius = util.massToRadius(player.cells[i].mass);
                         player.cells.splice(j, 1);
+                        j--;
                     }
                 }
-            }
+            //}
         }
         if(player.cells.length > i) {
             var borderCalc = player.cells[i].radius / 3;
@@ -455,6 +458,7 @@ function tickPlayer(currentPlayer) {
     }
 
     movePlayer(currentPlayer);
+    //console.log(currentPlayer.name + " : " + currentPlayer.x + " || " + currentPlayer.y);
 
     function funcFood(f) {
         return SAT.pointInCircle(new V(f.x, f.y), playerCircle);
@@ -476,6 +480,7 @@ function tickPlayer(currentPlayer) {
     }
 
     function check(user) {
+        // console.log("check " + user.name);
         for(var i=0; i<user.cells.length; i++) {
             if(user.cells[i].mass > 10 && user.id !== currentPlayer.id) {
                 var response = new SAT.Response();
@@ -483,6 +488,7 @@ function tickPlayer(currentPlayer) {
                     new C(new V(user.cells[i].x, user.cells[i].y), user.cells[i].radius),
                     response);
                 if (collided) {
+                    // console.log("collide: " + user.name + " && " + currentPlayer.name);
                     response.aUser = currentCell;
                     response.bUser = {
                         id: user.id,
@@ -499,6 +505,7 @@ function tickPlayer(currentPlayer) {
     }
 
     function collisionCheck(collision) {
+        // console.log(collision);
         if (collision.aUser.mass > collision.bUser.mass * 1.1  && collision.aUser.radius > Math.sqrt(Math.pow(collision.aUser.x - collision.bUser.x, 2) + Math.pow(collision.aUser.y - collision.bUser.y, 2))*1.75) {
             console.log('KILLING USER: ' + collision.bUser.id);
             console.log('collision info:');
@@ -557,6 +564,8 @@ function tickPlayer(currentPlayer) {
 
         tree.clear();
         tree.insert(users);
+        //console.log(currentPlayer);
+        //console.log(users);
         var playerCollisions = [];
 
         var otherUsers =  tree.retrieve(currentPlayer, check);

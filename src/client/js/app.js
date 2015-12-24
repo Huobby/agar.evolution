@@ -1386,7 +1386,7 @@ id: -1,                                               // player id
 
     };
     this.startGame();
-     * Name: smartBot
+    // * Name: smartBot
 
 }
 
