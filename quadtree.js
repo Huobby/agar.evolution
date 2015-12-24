@@ -28,6 +28,8 @@
  * tree.clear() removes all items from the quadtree.
  */
 
+// Import utilities
+var util = require('./bin/server/lib/util');
 (function(window) {
 
     var QUAD = {}; // global var for the quadtree
@@ -91,12 +93,12 @@
                  * pushed down to the new subnodes.
                  */
                 insert : function (item) {
-
                     var i;
 
                     if (nodes.length) {
                         // get the node in which the item fits best
                         i = this.findInsertNode(item);
+                        // console.log("i: " + i);
                         if (i === PARENT) {
                             // if the item does not fit, push it into the
                             // children array
@@ -117,6 +119,10 @@
                  * Find a node the item should be inserted in.
                  */
                 findInsertNode : function (item) {
+                    if (item.massTotal) {
+                        item.w = util.massToRadius(item.massTotal) * 2;
+                        item.h = util.massToRadius(item.massTotal) * 2;
+                    }
                     // left
                     if (item.x + item.w < x + (w / 2)) {
                         if (item.y + item.h < y + (h / 2)) return TOP_LEFT;
@@ -139,6 +145,10 @@
                  * above. The callback is called for every region the item overlaps.
                  */
                 findOverlappingNodes : function (item, callback) {
+                    if (item.massTotal) {
+                        item.w = util.massToRadius(item.massTotal) * 2;
+                        item.h = util.massToRadius(item.massTotal) * 2;
+                    }
                     // left
                     if (item.x < x + (w / 2)) {
                         if (item.y < y + (h / 2)) callback(TOP_LEFT);

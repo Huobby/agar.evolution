@@ -69,6 +69,8 @@ exports.uniformPosition = function (points, radius) {
 
         // 算最小距离
         for (var pi = 0; pi < points.length; pi++) {
+            if (points[pi] === undefined)
+                continue;
             var distance = exports.getDistance(candidate, points[pi]);
             if (distance < minDistance) {
                 minDistance = distance;
