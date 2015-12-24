@@ -1286,25 +1286,24 @@ id: -1,                                               // player id
 
 	for (var i = 0; i < foodList.length; i++) {
 	    for (var j = 0; j < clusters.length; j++) {
-		if (this.computeInexpensiveDistance(foodList[i].x, foodList[i].y, clusters[j].x, clusters[j].y) < blobSize * 2) {
-		    clusters[j].x = (foodList[i].x + clusters[j].x) / 2;
-		    clusters[j].y = (foodList[i].y + clusters[j].y) / 2;
-		    if (foodList[i].mass) {
-			cluster[j].mass += foodList[i].mass;
+		if (this.computeInexpensiveDistance(foodList[i].x, foodList[i].y, clusters[j][0], clusters[j][1]) < blobSize * 2) {
+		    clusters[j][0] = (foodList[i].x + clusters[j][0]) / 2;
+		    clusters[j][1] = (foodList[i].y + clusters[j][1]) / 2;
+		    clusters[j][2] += foodList[i].mass;
+		    if (foodList[i].special) {
+			clusters[j][4] = true;
 		    }
-		    else {
-			clusters[j].mass += 1;  // each food score 1
-		    }
+		    
 		    addedCluster = true;
 		    break;
 		}
 	    }
 	    if (!addedCluster) {
-		if (foodList[i].mass) {
-		    clusters.push([foodList[i].x, foodList[i].y, foodList[i].mass, 0]);
+		if (foodList[i].special) {
+		    clusters.push([foodList[i].x, foodList[i].y, foodList[i].mass, 0, true, 0]);
 		}
 		else {
-		    clusters.push([foodList[i].x, foodList[i].y, 1, 0]);
+		    clusters.push([foodList[i].x, foodList[i].y, foodList[i].mass, 0, false, 0]);
 		}
 	    }
 	    addedCluster = false;
@@ -1688,8 +1687,8 @@ x: radius * -Math.sin(t),
 		    if (curUser.cells[j].mass >= player.massTotal * 1.1) {
 			allPossibleThreats.push(curUser.cells[j]);
 		    }
-		    else if (curUser.cells[j].mass * 1.1 <= player.massTotal) {
-			foods.push({x:curUser.cells[j].x, y:curUser.cells[j].y, mass:curUser.cells[j].mass}); 
+		    else if (curUser.cells[j].mass * 1.3 <= player.massTotal) {
+			allPossibleFood.push({x:curUser.cells[j].x, y:curUser.cells[j].y, mass:curUser.cells[j].mass, special: true}); 
 		    }
 		}
 	    }
@@ -1850,7 +1849,7 @@ x: radius * -Math.sin(t),
 
 		var clusterAngle = this.getAngle(clusterAllFood[i][0], clusterAllFood[i][1], player.x, player.y);
 
-		clusterAllFood[i][2] = clusterAllFood[i][2] * 300 - this.computeDistance(clusterAllFood[i][0], clusterAllFood[i][1], player.x, player.y);
+		clusterAllFood[i][5] = clusterAllFood[i][2] * 15 - this.computeDistance(clusterAllFood[i][0], clusterAllFood[i][1], player.x, player.y);
 		//console.log("Current Value: " + clusterAllFood[i][2]);
 
 		//(goodAngles[bIndex][1] / 2 - (Math.abs(perfectAngle - clusterAngle)));
@@ -1861,10 +1860,10 @@ x: radius * -Math.sin(t),
 	    }
 
 	    var bestFoodI = 0;
-	    var bestFood = clusterAllFood[0][2];
+	    var bestFood = clusterAllFood[0][5];
 	    for (i = 1; i < clusterAllFood.length; i++) {
-		if (bestFood < clusterAllFood[i][2]) {
-		    bestFood = clusterAllFood[i][2];
+		if (bestFood < clusterAllFood[i][5]) {
+		    bestFood = clusterAllFood[i][5];
 		    bestFoodI = i;
 		}
 	    }
@@ -1875,6 +1874,13 @@ x: radius * -Math.sin(t),
 	    var bestFy=clusterAllFood[bestFoodI][1];
 	    var distance = this.computeDistance(player.x, player.y, bestFx, bestFy);
 	    var destination = [(bestFx - player.x) * (screenHeight/2) / distance, (bestFy - player.y) * (screenHeight/2) / distance];
+
+	    if (clusterAllFood[bestFoodI][4] && clusterAllFood[bestFoodI][2] * 3 <= player.cells[0].mass && player.cells.length === 1) {
+		if (Math.round(Math.random()*400) === 1) {
+		    socket.emit("0",{x: destination[0], y: destination[1]});
+		    socket.emit('2');	
+		}
+	    }
 
 
 	    destinationChoices = destination;
