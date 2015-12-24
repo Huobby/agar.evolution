@@ -729,6 +729,10 @@ function setupSocket(socket) {
 	    player.xoffset = isNaN(xoffset) ? 0 : xoffset;
 	    player.yoffset = isNaN(yoffset) ? 0 : yoffset;
 	    }
+	    else {
+		player.x = gameWidth/2;
+		player.y = gameHeight/2;
+	    }
 	    users = userData;
 	    foods = foodsList;
 	    fireFood = massList;

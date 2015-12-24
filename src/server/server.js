@@ -618,8 +618,10 @@ function gameloop() {
 function sendUpdates() {
     users.forEach( function(u) {
         // center the view if x/y is undefined, this will happen for spectators
-        u.x = u.x || c.gameWidth / 2;
-        u.y = u.y || c.gameHeight / 2;
+	if (u.type === "spectate") {
+	    u.x = c.gameWidth / 2;
+	    u.y = c.gameHeight / 2;
+	}
 
         var visibleFood  = food
             .map(function(f) {
