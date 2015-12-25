@@ -1685,12 +1685,13 @@ x: radius * -Math.sin(t),
 	    if (typeof(curUser.id) == "undefined") {
 	    }
 	    else {
+		player.cells.sort(function(a,b){return a<b?1:-1;});
 		for (j=0; j < curUser.cells.length; j++) {
 		    // temprorily use massTotal to represent whole mass
-		    if (curUser.cells[j].mass >= player.massTotal * 1.1) {
+		    if (curUser.cells[j].mass >= player.cells[cells.length - 1].mass * 1.1) {
 			allPossibleThreats.push(curUser.cells[j]);
 		    }
-		    else if (curUser.cells[j].mass * 1.3 <= player.massTotal) {
+		    else if (curUser.cells[j].mass * 1.3 <= player.cells[cells.length - 1].mass) {
 			allPossibleFood.push({x:curUser.cells[j].x, y:curUser.cells[j].y, mass:curUser.cells[j].mass, special: true}); 
 		    }
 		}
